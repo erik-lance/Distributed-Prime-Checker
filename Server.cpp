@@ -9,6 +9,15 @@ Server::Server(std::string udp_host, int udp_port)
 
 Server::~Server()
 {
+	// Close the socket
+	#ifdef _WIN32
+	closesocket(m_socket);
+	#else
+	close(m_socket);
+	#endif
+
+	// Print a message
+	std::cout << "Server stopped" << std::endl;
 }
 
 void Server::init()
