@@ -28,5 +28,14 @@ void Client::run()
 	inet_pton(AF_INET, host, &hint.sin_addr);
 
 	// Connect to the server
+	if (connect(sock, (sockaddr*)&hint, sizeof(hint)) == SOCKET_ERROR)
+	{
+		std::cerr << "Can't connect to server! Quitting" << std::endl;
+		closesocket(sock);
+		return;
+	}
+	else {
+		std::cout << "Connected to server!" << std::endl;
 
+	}
 }
