@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <queue>
+#include "PrimeChecker.h"
 
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -23,6 +24,7 @@ public:
 	~Server();
 
 	void init();
+	void loop();
 private:
 	// Host and port
 	std::string host;
