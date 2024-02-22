@@ -127,14 +127,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Client.h" />
     <ClInclude Include="Main.h" />
+    <ClInclude Include="Master.h" />
     <ClInclude Include="Network.h" />
     <ClInclude Include="PrimeChecker.h" />
+    <ClInclude Include="Server.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Client.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Master.cpp" />
     <ClCompile Include="Network.cpp" />
-    <ClCompile Include="PrimeChecker.cpp" />
+    <ClCompile Include="Server.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".env" />
