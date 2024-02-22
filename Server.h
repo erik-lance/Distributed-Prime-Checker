@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <thread>
 #include <string>
 #include <queue>
 #include "PrimeChecker.h"
@@ -25,6 +26,7 @@ public:
 
 	void init();
 	void loop();
+	void start();
 private:
 	// Host and port
 	std::string host;
@@ -36,5 +38,8 @@ private:
 
 	// Queue
 	std::queue<std::string> queue;
+
+	// Threads
+	std::thread listener;
 };
 

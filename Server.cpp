@@ -31,6 +31,20 @@ void Server::init()
 	{
 		throw std::runtime_error("Failed to bind socket");
 	}
+
+	// Set the socket to non-blocking mode
+	#ifdef _WIN32
+	u_long mode = 1;
+	ioctlsocket(m_socket, FIONBIO, &mode);
+	#else
+	fcntl(m_socket, F_SETFL, O_NONBLOCK);
+	#endif
+
+	// Print the server address
+	std::cout << "Server listening on " << host << ":" << port << std::endl;
+
+	// Start listening for incoming messages
+	start();
 }
 
 /**
@@ -42,7 +56,11 @@ while (true)
 	{
 		// Receive a message
 		char buffer[1024];
+
 		struct sockaddr_in client;
+		// For now client is 127.0.0.1
+		client = m_server;
+
 		int client_len = sizeof(client);
 		int bytes_received = recvfrom(m_socket, buffer, sizeof(buffer), 0, (struct sockaddr*)&client, &client_len);
 
@@ -63,4 +81,22 @@ while (true)
 			throw std::runtime_error("Failed to send response");
 		}
 	}
+}
+
+/**
+ * Starts listening for incoming messages
+ */
+void Server::start()
+{
+	if (listen(m_socket, 5) == SOCKET_ERROR)
+	{
+		throw std::runtime_error("Failed to listen on socket");
+	}
+
+	// Start the server loop. Provide a listener for each client
+	listener = std::thread(&Server::loop, this);
+	listener.detach();
+
+	// Print a message
+	std::cout << "Server started" << std::endl;
 }
