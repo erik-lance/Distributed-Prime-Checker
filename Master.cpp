@@ -38,6 +38,15 @@ void Master::init()
 
 void Master::loop()
 {
+		// Start the listener thread
+	listener = std::thread(&Master::receive, this);
+
+	// Start the sender thread
+	sender = std::thread(&Master::send, this);
+
+	// Wait for the threads to finish
+	listener.join();
+	sender.join();
 }
 
 void Master::start()
