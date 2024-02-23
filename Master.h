@@ -31,6 +31,7 @@ public:
 private:
 	std::string host; // Host Address
 	int port; // Port Number
+	bool running = true; // Running flag
 
 	// Socket
 	int m_socket;

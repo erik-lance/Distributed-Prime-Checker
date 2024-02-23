@@ -57,12 +57,41 @@ void Master::loop()
 
 void Master::start()
 {
+	// Start the main loop
+	loop();
 }
 
+/**
+ * Sends message back to the client.
+ */
 void Master::send(std::string message)
 {
+
 }
 
+/**
+ * Receive a message from clients. Queue the message for processing.
+ */
 void Master::receive()
 {
+	while (running)
+	{
+		// Receive a message
+		char buffer[1024];
+		struct sockaddr_in client;
+		int client_len = sizeof(client);
+		int bytes_received = recvfrom(m_socket, buffer, sizeof(buffer), 0, (struct sockaddr*)&client, &client_len);
+
+		if (bytes_received < 0)
+		{
+			std::cerr << "Error receiving message" << std::endl;
+			exit(1);
+		}
+
+		// Add the message to the queue
+		queue.push(std::string(buffer, bytes_received));
+
+		// Print the message
+		std::cout << "Received: " << buffer << std::endl;
+	}
 }
