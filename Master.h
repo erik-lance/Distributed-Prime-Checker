@@ -4,6 +4,7 @@
 #include <thread>
 #include <string>
 #include <queue>
+#include <vector>
 #include "PrimeChecker.h"
 
 #ifdef _WIN32
@@ -17,6 +18,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #endif
+
+typedef std::pair<std::string, std::string> udp_task;
 
 /**
  * This is the master server. It is responsible for waiting for a request from a client, which is the range
@@ -38,7 +41,7 @@ private:
 	struct sockaddr_in m_server; // Server Address
 
 	// Queue for messages
-	std::queue<std::string> queue;
+	std::queue<udp_task> queue;
 
 	// Threads
 	std::thread listener;

@@ -74,12 +74,19 @@ void Master::send(std::string message)
  */
 void Master::receive()
 {
+	// Receive a message
+	char buffer[1024];
+
+	// Client Address
+	struct sockaddr_in client;
+	client.sin_family = AF_INET;
+	client.sin_addr.s_addr = htonl(INADDR_ANY);
+	client.sin_port = htons(atoi(getenv("PORT"))); // Port
+
+	int client_len = sizeof(client);
+
 	while (running)
 	{
-		// Receive a message
-		char buffer[1024];
-		struct sockaddr_in client;
-		int client_len = sizeof(client);
 		int bytes_received = recvfrom(m_socket, buffer, sizeof(buffer), 0, (struct sockaddr*)&client, &client_len);
 
 		if (bytes_received < 0)
@@ -88,8 +95,9 @@ void Master::receive()
 			exit(1);
 		}
 
-		// Add the message to the queue
-		queue.push(std::string(buffer, bytes_received));
+		// Add the message to the queue with address
+		udp_task task = std::make_pair(buffer, inet_ntoa(client.sin_addr));
+		queue.push(task);
 
 		// Print the message
 		std::cout << "Received: " << buffer << std::endl;
