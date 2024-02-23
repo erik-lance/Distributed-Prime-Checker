@@ -10,6 +10,12 @@ Master::Master(std::string host_address, int port_number)
 
 Master::~Master()
 {
+	// Close the socket
+	#ifdef _WIN32
+		closesocket(m_socket);
+	#else
+		close(m_socket);
+	#endif
 }
 
 void Master::init()
