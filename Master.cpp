@@ -66,7 +66,34 @@ void Master::start()
  */
 void Master::send(std::string message)
 {
+	while (running)
+	{
+		// Check if there are any messages in the queue
+		if (!queue.empty())
+		{
+			// Get the message from the queue
+			udp_task task = queue.front();
+			queue.pop();
 
+			// Send the message to the client
+			struct sockaddr_in client;
+			client.sin_family = AF_INET; // IPv4
+			client.sin_port = htons(atoi(getenv("PORT"))); // Port
+			client.sin_addr.s_addr = inet_addr(task.second.c_str()); // Address
+
+			int client_len = sizeof(client);
+
+			int bytes_sent = sendto(m_socket, task.first.c_str(), task.first.size(), 0, (struct sockaddr*)&client, client_len);
+			if (bytes_sent < 0)
+			{
+				std::cerr << "Error sending message" << std::endl;
+				exit(1);
+			}
+
+			// Print the message
+			std::cout << "Sent: " << task.first << std::endl;
+		}
+	}
 }
 
 /**
