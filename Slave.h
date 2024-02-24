@@ -28,6 +28,7 @@ public:
 	Slave(int n);
 	~Slave();
 private:
+	int slave_id;
 	int m_socket; // Socket
 	struct sockaddr_in m_server; // Server Address
 

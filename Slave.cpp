@@ -2,6 +2,7 @@
 
 Slave::Slave(int n)
 {
+	this->slave_id = n;
 	this->isRunning = true;
 
 	init();
@@ -31,7 +32,7 @@ void Slave::init()
 	this->m_server.sin_family = AF_INET;
 
 	// Get address of slave
-	std::string addr = slave_addresses[n];
+	std::string addr = slave_addresses[slave_id];
 	this->m_server.sin_port = htons(atoi(addr.substr(addr.find(":") + 1).c_str())); // Port number of slave
 	this->m_server.sin_addr.s_addr = inet_addr(addr.substr(0, addr.find(":")).c_str()); // IP Address of slave
 
