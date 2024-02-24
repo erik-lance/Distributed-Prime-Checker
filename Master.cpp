@@ -107,37 +107,40 @@ void Master::receive()
 		// Add the message to the queue with address
 		std::string client_address = inet_ntoa(client.sin_addr);
 
-		// TODO: Determine if Client or Slave
-		
-		// Parse client messsage to be range<int, int>
-		// Client sends: "1,2"
-		// Parse to: range<int, int>
-		int start = 0;
-		int end = 0;
-		std::string str(buffer);
-		std::string delimiter = ",";
-		size_t pos = 0;
-		std::string token;
+		// Client: "C:1,2"
+		// Slave: "1 2 3 5 7 11"
 
-		// Parse the string
-		while ((pos = str.find(delimiter)) != std::string::npos) {
-			token = str.substr(0, pos);
-			start = std::stoi(token);
-			str.erase(0, pos + delimiter.length());
+		// Determine the type of message
+		if (buffer[0] == 'C')
+		{
+			// Parse client messsage to be range<int, int>
+			// Client sends: "C:1,2"
+			// Parse to: range<int, int>
+			std::string str_msg = buffer;
+			std::string delimiter = ":";
+			std::string token = str_msg.substr(2, str_msg.find(delimiter));
+			std::string str_range = str_msg.substr(str_msg.find(delimiter) + 1, str_msg.length());
+
+			// Parse the range
+			int start = std::stoi(str_range.substr(0, str_range.find(",")));
+			int end = std::stoi(str_range.substr(str_range.find(",") + 1, str_range.length()));
+			
+			// Create the range
+			range num_range = std::make_pair(start, end);
+
+			// Hash address and range to task id integer
+			int task_id = std::hash<std::string>{}(client_address + std::to_string(start) + std::to_string(end));
+
+			client_details details = std::make_pair(client_address, task_id);
+			client_message message = std::make_pair(details, num_range);
+
+			// Add the message to the queue
+			queue.push(message);
 		}
-		end = std::stoi(str);
-
-		// Create the range
-		range num_range = std::make_pair(start, end);
-
-		// Hash address and range to task id integer
-		int task_id = std::hash<std::string>{}(client_address + std::to_string(start) + std::to_string(end));
-
-		client_details details = std::make_pair(client_address, task_id);
-		client_message message = std::make_pair(details, num_range);
-
-		// Add the message to the queue
-		queue.push(message);
+		else if (buffer[0] == 'S')
+		{
+			// Add the message to the queue
+		}
 
 		// Print the message
 		std::cout << "Received: " << buffer << std::endl;
