@@ -8,7 +8,7 @@ typedef std::pair<int, int> range;
 // Address and Task ID
 typedef std::pair<std::string, int> client_details;
 
-// Client Message
+// Client Message (Request: <client_details, range>)
 typedef std::pair<client_details, range> client_message;
 
 // Master -> Client (Response: <client_details, result>)
