@@ -30,7 +30,7 @@ class Master
 public:
 	Master(std::string host_address, int port_number);
 	~Master();
-
+	void start();
 private:
 	std::string host; // Host Address
 	int port; // Port Number
@@ -60,7 +60,6 @@ private:
 	// Functions
 	void init();
 	void loop();
-	void start();
 	void client_send();
 	void slave_send();
 	void receive();
