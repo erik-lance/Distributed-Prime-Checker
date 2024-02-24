@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <mutex>
 #include "Structures.h"
 
 /**
@@ -25,6 +26,21 @@ static inline bool isPrime(int n) {
 	}
 
 	return true;
+}
+
+/**
+ * Threaded prime checker.
+ * @param r The range of numbers to check.
+ * @param primes The vector to store the prime numbers.
+ * @param mtx The mutex to lock the vector.
+ */
+static inline void primeChecker(range r, std::vector<int>& primes, std::mutex& mtx) {
+	for (int i = r.first; i <= r.second; i++) {
+		if (isPrime(i)) {
+			std::lock_guard<std::mutex> lock(mtx);
+			primes.push_back(i);
+		}
+	}
 }
 
 static inline std::vector<int> getPrimes(range r) {
