@@ -15,19 +15,29 @@ int main()
 	if (process_type == "MASTER")
 	{
 		// Master server
-		std::string host = "127.0.0.1";
-		int port = getenv("PORT") == NULL ? 6379 : atoi(getenv("PORT"));
+		std::string full_address = master_address;
+		std::string host = full_address.substr(0, full_address.find(":"));
+		int port = atoi(full_address.substr(full_address.find(":") + 1).c_str());
 	}
 	else if (process_type == "CLIENT")
 	{
 		// Client
-		std::string host = "127.0.0.1";
-		int port = getenv("PORT") == NULL ? 6379 : atoi(getenv("PORT"));
+		std::string full_address = client_address;
+		std::string host = full_address.substr(0, full_address.find(":"));
+		int port = atoi(full_address.substr(full_address.find(":") + 1).c_str());
 	}
 	else
 	{
 		// Slave server
 
+		// Ask for server id
+		int server_id;
+		std::cout << "Enter server id: ";
+		std::cin >> server_id;
+
+		std::string full_address = slave_addresses[server_id];
+		std::string host = full_address.substr(0, full_address.find(":"));
+		int port = atoi(full_address.substr(full_address.find(":") + 1).c_str());
 	}
 
 	return 0;
