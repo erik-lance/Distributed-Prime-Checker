@@ -103,11 +103,16 @@ void Master::client_send()
 	while (running)
 	{
 		// Check if there are any messages in the queue
-		if (!queue.empty())
+		if (!sender_queue.empty())
 		{
 			// Get the message from the queue
 			response_client task = sender_queue.front();
 			sender_queue.pop();
+
+			std::cout << "Sending to client" << std::endl;
+			std::cout << "Task ID: " << task.first.second << std::endl;
+			std::cout << "Address: " << task.first.first << std::endl;
+			std::cout << "Primes: " << task.second.size() << std::endl;
 		}
 	}
 }
@@ -119,12 +124,18 @@ void Master::slave_send()
 {
 	while (running)
 	{
-		// Check if there are any messages in the queue
-		if (!slave_queue.empty())
+		// Check if there are any messages from client
+		if (!queue.empty())
 		{
 			// Get the message from the queue
-			response_slave task = slave_queue.front();
-			slave_queue.pop();
+			client_message task = queue.front();
+			queue.pop();
+
+			std::cout << "Sending to slave" << std::endl;
+			std::cout << "Task ID: " << task.first.second << std::endl;
+			std::cout << "Address: " << task.first.first << std::endl;
+			std::cout << "Range: " << task.second.first << " - " << task.second.second << std::endl;
+
 		}
 	}
 }
