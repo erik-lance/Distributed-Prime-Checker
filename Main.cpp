@@ -2,14 +2,10 @@
 
 int main()
 {
-	// Check process type using env
-	if (getenv("PROCESS_TYPE") == NULL)
-	{
-		std::cout << "Please set the PROCESS_TYPE environment variable" << std::endl;
-		return 1;
-	}
-
-	std::string process_type = getenv("PROCESS_TYPE");
+	// Ask process type
+	std::string process_type;
+	std::cout << "Enter process type (MASTER, SLAVE, CLIENT): ";
+	std::cin >> process_type;
 
 	// Prepare as master server or slave server
 	if (process_type == "MASTER")
