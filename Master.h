@@ -6,6 +6,7 @@
 #include <queue>
 #include <vector>
 #include "PrimeChecker.h"
+#include "Structures.h"
 
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -18,23 +19,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #endif
-
-// Range of numbers
-typedef std::pair<int, int> range;
-
-// Client message
-typedef std::pair<std::string, std::string> udp_task;
-
-// Slave Sender message (task id, range)
-typedef std::pair<std::string, range> slave_task;
-
-// Slave Receiver message (task id, result)
-typedef std::pair<std::string, int> slave_result;
-
-// Client and Task Id (client addr, task id)
-typedef std::pair<std::string, std::string> client_task;
-
-
 
 /**
  * This is the master server. It is responsible for waiting for a request from a client, which is the range
@@ -56,16 +40,16 @@ private:
 	struct sockaddr_in m_server; // Server Address
 
 	// Queue for messages from the client
-	std::queue<udp_task> queue;
+	std::queue<client_message> queue;
+
+	// Queue for messages to the client
+	std::queue<response_client> sender_queue;
 
 	// Queue for messages from the slave servers
-	std::queue<udp_task> slave_queue;
+	std::queue<response_slave> slave_queue;
 
 	// Queue for messages to the slave servers
-	std::queue<slave_task> slave_sender_queue;
-
-	// Queue for task id resolvement
-	std::queue<client_task> client_task_queue;
+	std::queue<request_slave> slave_sender_queue;
 
 	// Threads
 	std::thread listener;

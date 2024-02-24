@@ -72,26 +72,8 @@ void Master::send(std::string message)
 		if (!queue.empty())
 		{
 			// Get the message from the queue
-			udp_task task = queue.front();
-			queue.pop();
-
-			// Send the message to the client
-			struct sockaddr_in client;
-			client.sin_family = AF_INET; // IPv4
-			client.sin_port = htons(atoi(getenv("PORT"))); // Port
-			client.sin_addr.s_addr = inet_addr(task.second.c_str()); // Address
-
-			int client_len = sizeof(client);
-
-			int bytes_sent = sendto(m_socket, task.first.c_str(), task.first.size(), 0, (struct sockaddr*)&client, client_len);
-			if (bytes_sent < 0)
-			{
-				std::cerr << "Error sending message" << std::endl;
-				exit(1);
-			}
-
-			// Print the message
-			std::cout << "Sent: " << task.first << std::endl;
+			response_client task = sender_queue.front();
+			sender_queue.pop();
 		}
 	}
 }
@@ -123,8 +105,37 @@ void Master::receive()
 		}
 
 		// Add the message to the queue with address
-		udp_task task = std::make_pair(buffer, inet_ntoa(client.sin_addr));
-		queue.push(task);
+		std::string client_address = inet_ntoa(client.sin_addr);
+		
+		// Parse client messsage to be range<int, int>
+		// Client sends: "1,2"
+		// Parse to: range<int, int>
+		int start = 0;
+		int end = 0;
+		std::string str(buffer);
+		std::string delimiter = ",";
+		size_t pos = 0;
+		std::string token;
+
+		// Parse the string
+		while ((pos = str.find(delimiter)) != std::string::npos) {
+			token = str.substr(0, pos);
+			start = std::stoi(token);
+			str.erase(0, pos + delimiter.length());
+		}
+		end = std::stoi(str);
+
+		// Create the range
+		range num_range = std::make_pair(start, end);
+
+		// Hash address and range to task id integer
+		int task_id = std::hash<std::string>{}(client_address + std::to_string(start) + std::to_string(end));
+
+		client_details details = std::make_pair(client_address, task_id);
+		client_message message = std::make_pair(details, num_range);
+
+		// Add the message to the queue
+		queue.push(message);
 
 		// Print the message
 		std::cout << "Received: " << buffer << std::endl;
