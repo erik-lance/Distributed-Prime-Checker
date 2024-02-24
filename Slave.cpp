@@ -206,5 +206,9 @@ void Slave::listen()
 				count++; 
 			}
 		}
+
+		// Once done sending all primes, send another message
+		// confirming that all primes have been sent
+		messages.push("DONE");
 	}
 }
