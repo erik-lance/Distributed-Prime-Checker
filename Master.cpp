@@ -1,9 +1,10 @@
 #include "Master.h"
 
-Master::Master(std::string host_address, int port_number)
+Master::Master(std::string host_address, int port_number, int threads)
 {
 	this->host = host_address;
 	this->port = port_number;
+	this->n_threads = threads;
 
 	// If Windows, initialize Winsock
 	#ifdef _WIN32
@@ -216,7 +217,7 @@ void Master::receive()
 		// Slave: "1 2 3 5 7 11"
 
 		// Determine the type of message
-		if (buffer[0] == 'C')
+		if (buffer[1] == ':')
 		{
 			std::cout << "CLIENT Received: " << buffer << std::endl;
 
@@ -278,7 +279,7 @@ void Master::receive()
 
 			// Add the message to the slave response queue
 			// Parse directly into array of integers
-			// Slave sends: "id123879872:1 2 3 5 7 11"
+			// Slave sends: ":1 2 3 5 7 11"
 			std::string str_msg = buffer;
 			std::string delimiter = ":";
 			std::string token = str_msg.substr(0, str_msg.find(delimiter)); // Get the task id

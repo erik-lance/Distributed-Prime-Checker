@@ -21,7 +21,7 @@ int main()
 		int port = atoi(full_address.substr(full_address.find(":") + 1).c_str());
 
 		// Start the master server
-		Master master(host, port);
+		Master master(host, port, n_threads);
 		master.start();
 	}
 	else if (process_type == "2")

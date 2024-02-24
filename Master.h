@@ -28,12 +28,13 @@
 class Master
 {
 public:
-	Master(std::string host_address, int port_number);
+	Master(std::string host_address, int port_number, int threads);
 	~Master();
 	void start();
 private:
 	std::string host; // Host Address
 	int port; // Port Number
+	int n_threads;
 	bool running = true; // Running flag
 
 	// Socket
@@ -51,6 +52,8 @@ private:
 
 	// Queue for messages to the slave servers
 	std::queue<request_slave> slave_sender_queue;
+
+	std::string primesHex;
 
 	// Threads
 	std::thread listener;
