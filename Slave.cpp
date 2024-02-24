@@ -1,8 +1,9 @@
 #include "Slave.h"
 
-Slave::Slave(int n)
+Slave::Slave(int n, int n_threads)
 {
 	this->slave_id = n;
+	this->n_threads = n_threads;
 	this->isRunning = true;
 
 	// If windows, initialize winsock
@@ -75,15 +76,14 @@ void Slave::processor()
 	while (isRunning)
 	{
 		// If there are messages in the queue
-		if (!requests.empty())
+		if (!messages.empty())
 		{
 			// Get the message
-			request_slave request = requests.front();
-			requests.pop();
+			std::string request = messages.front();
+			messages.pop();
 
-			// Process by calculating primes to hex
-			range r = request.second;
-			std::string message = getPrimesHex(r);
+			// Format if needed
+			std::string message = request;
 
 			sendto(this->m_socket, message.c_str(), message.length(), 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
 
@@ -150,7 +150,61 @@ void Slave::listen()
 		// Parse message to range (NUM1,NUM2)
 		int start = atoi(message.substr(0, message.find(",")).c_str());
 		int end = atoi(message.substr(message.find(",") + 1).c_str());
-		range n_range = std::make_pair(start, end);
+		
 
+		// Split the range into n_threads
+		int range_size_per_thread = (end - start) / n_threads;
+		range n_range = std::make_pair(start, start + range_size_per_thread);
+
+		// Prepare threads
+		std::vector<std::thread> threads;
+		std::string primesHex;
+
+		for (int i = 0; i < n_threads; i++)
+		{
+			// Use `primeCheckerHex` from PrimeChecker.h which takes
+			// (range r, std::string& primes, std::mutex& mtx)
+			threads.push_back(std::thread(primeCheckerHex, n_range, std::ref(primesHex), std::ref(mtx)));
+
+			// Update range
+			n_range.first = n_range.second + 1;
+			n_range.second = n_range.first + range_size_per_thread;
+
+			// Clamp range
+			if (n_range.second > end) n_range.second = end;
+		}
+
+		// Join threads
+		for (int i = 0; i < n_threads; i++)
+		{
+			threads[i].join();
+		}
+
+		// Once done calculating, split and add to queue
+		// until reached end of message. Splits by MAX_SPLITS
+		// at a time.
+		std::string delimiter = " ";
+		size_t pos = 0;
+		std::string token;
+		std::string message = "";
+		int count = 0;
+		while ((pos = primesHex.find(delimiter)) != std::string::npos) {
+			token = primesHex.substr(0, pos);
+			primesHex.erase(0, pos + delimiter.length());
+
+			// If primesHex is empty or count is MAX_SPLITS, add to queue
+			if (primesHex.empty() || count == MAX_SPLITS)
+			{
+				// Add to queue
+				messages.push(message);
+				start += range_size_per_thread;
+				count = 0;
+				message = "";
+			}
+			else { 
+				message += token + " ";
+				count++; 
+			}
+		}
 	}
 }

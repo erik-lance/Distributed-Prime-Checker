@@ -25,15 +25,17 @@
 class Slave
 {
 public:
-	Slave(int n);
+	Slave(int n, int threads);
 	~Slave();
 private:
 	int slave_id;
+	int n_threads;
+	std::mutex mtx;
+
 	SOCKET m_socket; // Socket
 	struct sockaddr_in m_server; // Server Address
 
-	std::queue<request_slave> requests;
-	std::vector<int> primes;
+	std::queue<std::string> messages;
 	std::thread listener;
 	bool isRunning;
 
