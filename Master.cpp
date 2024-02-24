@@ -118,7 +118,7 @@ void Master::client_send()
 }
 
 /**
- * Sends message to the slave.
+ * Sends message to slaves and master to split the prime checking.
  */
 void Master::slave_send()
 {
@@ -131,10 +131,45 @@ void Master::slave_send()
 			client_message task = queue.front();
 			queue.pop();
 
-			std::cout << "Sending to slave" << std::endl;
+			std::cout << "Sending to slaves + master" << std::endl;
 			std::cout << "Task ID: " << task.first.second << std::endl;
 			std::cout << "Address: " << task.first.first << std::endl;
 			std::cout << "Range: " << task.second.first << " - " << task.second.second << std::endl;
+
+
+			// Split the range into equal parts for each slave + master.
+			int n_machines = slave_addresses.size() + 1; // Number of machines (master is the +1)
+
+			// Calculate the range for each machine
+			int range_size = (task.second.second - task.second.first) / n_machines;
+			int start = task.second.first;
+			int end = start + range_size;
+
+			// Send the message to the slaves
+			for (int i = 0; i < slave_addresses.size()-1; i++)
+			{
+				// Create the range
+				range num_range = std::make_pair(start, end);
+
+				// Hash address and range to task id integer
+				int task_id = std::hash<std::string>{}(slave_addresses[i] + std::to_string(start) + std::to_string(end));
+
+				// Create the message
+				request_slave message = std::make_pair(task_id, num_range);
+
+				// Add the message to the queue
+				slave_sender_queue.push(message);
+
+				// Update the range
+				start = end + 1;
+				end = start + range_size;
+
+				// Clamp the end
+				if (end > task.second.second) end = task.second.second;
+			}
+
+			// Process the remaining primes
+			range num_range = std::make_pair(start, task.second.second);
 
 		}
 	}
