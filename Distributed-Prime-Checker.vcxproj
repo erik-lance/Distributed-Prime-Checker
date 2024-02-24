@@ -133,6 +133,8 @@
     <ClInclude Include="Network.h" />
     <ClInclude Include="PrimeChecker.h" />
     <ClInclude Include="Server.h" />
+    <ClInclude Include="Slave.h" />
+    <ClInclude Include="Structures.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Client.cpp" />
@@ -140,6 +142,7 @@
     <ClCompile Include="Master.cpp" />
     <ClCompile Include="Network.cpp" />
     <ClCompile Include="Server.cpp" />
+    <ClCompile Include="Slave.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".env" />
