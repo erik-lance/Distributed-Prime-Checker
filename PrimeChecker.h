@@ -1,4 +1,5 @@
 #pragma once
+#include "Structures.h"
 
 /**
  * This function checks if a number is prime.
@@ -21,4 +22,13 @@ static inline bool isPrime(int n) {
 	}
 
 	return true;
+}
+
+static inline std::vector<int> getPrimes(range r) {
+	std::vector<int> primes;
+	for (int i = r.first; i <= r.second; i++) {
+		if (isPrime(i))
+			primes.push_back(i);
+	}
+	return primes;
 }
