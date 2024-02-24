@@ -7,6 +7,11 @@ int main()
 	std::cout << "Enter process type (0 - MASTER, 1 - SLAVE, 2 - CLIENT): ";
 	std::cin >> process_type;
 
+	// Ask n_threads
+	int n_threads;
+	std::cout << "Enter number of threads: ";
+	std::cin >> n_threads;
+
 	// Prepare as master server or slave server
 	if (process_type == "0")
 	{
