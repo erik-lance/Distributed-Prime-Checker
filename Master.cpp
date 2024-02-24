@@ -44,15 +44,15 @@ void Master::init()
 
 void Master::loop()
 {
-		// Start the listener thread
-	listener = std::thread(&Master::receive, this);
+	// Start the listener threads
+	client_listener = std::thread(&Master::client_receive, this);
 
-	// Start the sender thread
-	sender = std::thread(&Master::send, this);
+	// Start the sender threads
+	client_sender = std::thread(&Master::client_send, this);
 
 	// Wait for the threads to finish
-	listener.join();
-	sender.join();
+	client_listener.join();
+	client_sender.join();
 }
 
 void Master::start()
@@ -64,7 +64,7 @@ void Master::start()
 /**
  * Sends message back to the client.
  */
-void Master::send(std::string message)
+void Master::client_send()
 {
 	while (running)
 	{
@@ -81,7 +81,7 @@ void Master::send(std::string message)
 /**
  * Receive a message from clients. Queue the message for processing.
  */
-void Master::receive()
+void Master::client_receive()
 {
 	// Receive a message
 	char buffer[1024];
@@ -140,4 +140,12 @@ void Master::receive()
 		// Print the message
 		std::cout << "Received: " << buffer << std::endl;
 	}
+}
+
+void Master::slave_send()
+{
+}
+
+void Master::slave_receive()
+{
 }

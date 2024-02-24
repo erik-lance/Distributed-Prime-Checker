@@ -52,15 +52,19 @@ private:
 	std::queue<request_slave> slave_sender_queue;
 
 	// Threads
-	std::thread listener;
-	std::thread sender;
+	std::thread client_listener;
+	std::thread client_sender;
+	std::thread slave_listener;
+	std::thread slave_sender;
 
 	// Functions
 	void init();
 	void loop();
 	void start();
-	void send(std::string message);
-	void receive();
+	void client_send();
+	void client_receive();
+	void slave_send();
+	void slave_receive();
 	void check_slave_msgs();
 };
 
