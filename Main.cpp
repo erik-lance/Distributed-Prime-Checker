@@ -14,6 +14,10 @@ int main()
 		std::string full_address = master_address;
 		std::string host = full_address.substr(0, full_address.find(":"));
 		int port = atoi(full_address.substr(full_address.find(":") + 1).c_str());
+
+		// Start the master server
+		Master master(host, port);
+		master.start();
 	}
 	else if (process_type == "CLIENT")
 	{
