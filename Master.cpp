@@ -32,7 +32,7 @@ void Master::init()
 	memset((char*)&m_server, 0, sizeof(m_server));
 	m_server.sin_family = AF_INET;
 	m_server.sin_port = htons(port);
-	m_server.sin_addr.s_addr = inet_addr(host.c_str());
+	InetPtonA(AF_INET, host.c_str(), &m_server.sin_addr); // Convert the host address to a usable format
 
 	// Bind the socket to the server address
 	if (bind(m_socket, (struct sockaddr*)&m_server, sizeof(m_server)) < 0)
@@ -109,7 +109,7 @@ void Master::receive()
 	struct sockaddr_in client;
 	client.sin_family = AF_INET;
 	client.sin_addr.s_addr = htonl(INADDR_ANY); // Address (Can be any address)
-	client.sin_port = htons(atoi(getenv("PORT"))); // Port
+	client.sin_port = htons(6378); // Port
 
 	int client_len = sizeof(client);
 
@@ -124,7 +124,8 @@ void Master::receive()
 		}
 
 		// Add the message to the queue with address
-		std::string client_address = inet_ntoa(client.sin_addr);
+		std::string client_address;
+		inet_ntop(AF_INET, &client.sin_addr, &client_address[0], client_address.size());
 
 		// Client: "C:1,2"
 		// Slave: "ID:1 2 3 5 7 11"

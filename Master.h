@@ -36,7 +36,7 @@ private:
 	bool running = true; // Running flag
 
 	// Socket
-	int m_socket;
+	SOCKET m_socket;
 	struct sockaddr_in m_server; // Server Address
 
 	// Queue for messages from the client

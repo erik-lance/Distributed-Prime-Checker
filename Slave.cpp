@@ -33,8 +33,12 @@ void Slave::init()
 
 	// Get address of slave
 	std::string addr = slave_addresses[slave_id];
-	this->m_server.sin_port = htons(atoi(addr.substr(addr.find(":") + 1).c_str())); // Port number of slave
-	this->m_server.sin_addr.s_addr = inet_addr(addr.substr(0, addr.find(":")).c_str()); // IP Address of slave
+	int port = atoi(addr.substr(addr.find(":") + 1).c_str());
+	std::string host = addr.substr(0, addr.find(":"));
+
+	this->m_server.sin_port = htons(port);
+	InetPtonA(AF_INET, host.c_str(), &this->m_server.sin_addr); // Convert the host address to a usable format
+
 
 	// Bind the socket
 	if (bind(this->m_socket, (struct sockaddr*)&this->m_server, sizeof(this->m_server)) < 0)
@@ -49,11 +53,14 @@ void Slave::init()
  */
 void Slave::processor()
 {
+	int port = atoi(master_address.substr(master_address.find(":") + 1).c_str());
+	std::string host = master_address.substr(0, master_address.find(":"));
+
 	// Socket Address
 	struct sockaddr_in server_addr;
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.s_addr = inet_addr(master_address.substr(0, master_address.find(":")).c_str()); // IP Address of master
-	server_addr.sin_port = htons(atoi(master_address.substr(master_address.find(":") + 1).c_str())); // Port number of master
+	server_addr.sin_port = htons(port); // Port number of master
+	InetPtonA(AF_INET, host.c_str(), &server_addr.sin_addr); // Convert the host address to a usable format
 
 	while (isRunning)
 	{
@@ -84,11 +91,15 @@ void Slave::processor()
  */
 void Slave::listen()
 {
+	int port = atoi(master_address.substr(master_address.find(":") + 1).c_str());
+	std::string host = master_address.substr(0, master_address.find(":"));
+
 	// Socket Address
 	struct sockaddr_in server_addr;
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.s_addr = inet_addr(master_address.substr(0, master_address.find(":")).c_str()); // IP Address of master
-	server_addr.sin_port = htons(atoi(master_address.substr(master_address.find(":") + 1).c_str())); // Port number of master
+	server_addr.sin_port = htons(port); // Port number of master
+	InetPtonA(AF_INET, host.c_str(), &server_addr.sin_addr); // Convert the host address to a usable format
+
 	int len = sizeof(server_addr);
 
 	while (isRunning)
