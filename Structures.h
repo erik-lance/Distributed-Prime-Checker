@@ -23,6 +23,9 @@ typedef std::pair<int, std::vector<int>> response_slave;
 // Master Address
 const std::string master_address = "127.0.0.1:6379";
 
+// Client Address
+const std::string client_address = "127.0.0.1:6378";
+
 // Slave Addresses
 const std::vector<std::string> slave_addresses = {
 	"127.0.0.1:5000",
