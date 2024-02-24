@@ -45,13 +45,13 @@ void Master::init()
 void Master::loop()
 {
 	// Start the listener threads
-	client_listener = std::thread(&Master::client_receive, this);
+	listener = std::thread(&Master::receive, this);
 
 	// Start the sender threads
 	client_sender = std::thread(&Master::client_send, this);
 
 	// Wait for the threads to finish
-	client_listener.join();
+	listener.join();
 	client_sender.join();
 }
 
@@ -81,7 +81,7 @@ void Master::client_send()
 /**
  * Receive a message from clients. Queue the message for processing.
  */
-void Master::client_receive()
+void Master::receive()
 {
 	// Receive a message
 	char buffer[1024];
@@ -106,6 +106,8 @@ void Master::client_receive()
 
 		// Add the message to the queue with address
 		std::string client_address = inet_ntoa(client.sin_addr);
+
+		// TODO: Determine if Client or Slave
 		
 		// Parse client messsage to be range<int, int>
 		// Client sends: "1,2"
@@ -143,9 +145,5 @@ void Master::client_receive()
 }
 
 void Master::slave_send()
-{
-}
-
-void Master::slave_receive()
 {
 }
