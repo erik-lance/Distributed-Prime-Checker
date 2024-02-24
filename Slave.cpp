@@ -120,10 +120,29 @@ void Slave::listen()
 
 		// Receive message
 		int n = recvfrom(this->m_socket, buffer, 1024, 0, (struct sockaddr*)&server_addr, (socklen_t*)&len);
+
 		if (n < 0)
 		{
-			std::cerr << "Error receiving message" << std::endl;
-			exit(1);
+			// Error handling
+			#ifdef _WIN32
+				int error_code = WSAGetLastError();
+				if (error_code != WSAEWOULDBLOCK) {
+					char error[1024];
+					strerror_s(error, sizeof(error), error_code);
+					std::cerr << "Error receiving message: " << error << std::endl;
+					exit(1);
+				}
+				else {
+					continue;
+				}
+			#else
+				if (errno != EWOULDBLOCK && errno != EAGAIN) {
+					char error[1024];
+					strerror_r(errno, error, sizeof(error));
+					std::cerr << "Error receiving message: " << error << std::endl;
+					exit(1);
+				}
+			#endif
 		}
 
 		// Add message to queue
