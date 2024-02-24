@@ -68,19 +68,9 @@ void Slave::processor()
 			range n_range = request.second;
 			std::vector<int> primes = getPrimes(n_range); // Single threaded for now
 
-			// Convert primes into a string separated by spaces
-			std::string prime_string = "";
-			for (int i = 0; i < primes.size(); i++)
-			{
-				prime_string += std::to_string(primes[i]);
-				if (i != primes.size() - 1)
-				{
-					prime_string += " ";
-				}
-			}
+			// Format the response
+			std::string message = format_response(request, primes);
 
-			// Send the message back to the master (TASKID:PRIMES)
-			std::string message = std::to_string(request.first) + ":" + prime_string;
 			sendto(this->m_socket, message.c_str(), message.length(), 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
 
 			// Log the message
@@ -121,13 +111,44 @@ void Slave::listen()
 		std::cout << "Slave " << slave_id << " received message: " << message << std::endl;
 
 		// Split message into task id and range (Received: TASKID:RANGE)
-		int task_id = std::stoi(message.substr(0, message.find(":")));
-		std::string str_range = message.substr(message.find(":") + 1);
-		int start = std::stoi(str_range.substr(0, str_range.find(",")));
-		int end = std::stoi(str_range.substr(str_range.find(",") + 1));
-		range n_range = std::make_pair(start, end);
+		request_slave request = split_request(message);
 
 		// Add to queue
-		requests.push(std::make_pair(task_id, n_range));
+		requests.push(request);
 	}
+}
+
+/**
+ * Splits the message into task id and range (TASKID:RANGE)
+ * @param request - the message to split (e.g.: 1579344:100000,200000)
+ */
+request_slave Slave::split_request(std::string request)
+{
+	// Split the request into task id and range
+	int task_id = std::stoi(request.substr(0, request.find(":")));
+	std::string str_range = request.substr(request.find(":") + 1);
+	int start = std::stoi(str_range.substr(0, str_range.find(",")));
+	int end = std::stoi(str_range.substr(str_range.find(",") + 1));
+	range n_range = std::make_pair(start, end);
+
+	return std::make_pair(task_id, n_range);
+}
+
+/**
+ * Gets the task id and primes in the range
+ * @param request - the message to grab id (e.g.: 1579344:100000,200000)
+ * @return - the task id and range
+ */
+std::string Slave::format_response(request_slave request, std::vector<int> primes)
+{
+	std::string response = std::to_string(request.first) + ":";
+	for (int i = 0; i < primes.size(); i++)
+	{
+		response += std::to_string(primes[i]);
+		if (i != primes.size() - 1)
+		{
+			response += " ";
+		}
+	}
+	return response;
 }
