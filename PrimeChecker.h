@@ -48,3 +48,25 @@ static inline std::string getPrimesHex(range r) {
 	}
 	return primes;
 }
+
+/**
+ * Converts a string of hex numbers separated with space
+ * to a vector of integers.
+ * @param primes The string of hex numbers.
+ * @return The vector of integers.
+ */
+static inline std::vector<int> convertHexPrimes(std::string primes) {
+	std::vector<int> converted;
+	std::stringstream stream(primes);
+	std::string hex;
+
+	// Convert each hex number to integer and moving
+	// to the next hex number separated by space
+	while (stream >> hex) {
+		int n;
+		std::stringstream(hex) >> std::hex >> n;
+		converted.push_back(n);
+	}
+
+	return converted;
+}
