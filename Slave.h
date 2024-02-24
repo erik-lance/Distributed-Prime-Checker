@@ -40,7 +40,5 @@ private:
 	void init();
 	void processor();
 	void listen();
-	request_slave split_request(std::string request);
-	std::string format_response(request_slave request, std::vector<int> primes);
 };
 

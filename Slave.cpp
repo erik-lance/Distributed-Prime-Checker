@@ -81,12 +81,9 @@ void Slave::processor()
 			request_slave request = requests.front();
 			requests.pop();
 
-			// Process by calculating primes
-			range n_range = request.second;
-			std::vector<int> primes = getPrimes(n_range); // Single threaded for now
-
-			// Format the response
-			std::string message = format_response(request, primes);
+			// Process by calculating primes to hex
+			range r = request.second;
+			std::string message = getPrimesHex(r);
 
 			sendto(this->m_socket, message.c_str(), message.length(), 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
 
@@ -150,45 +147,10 @@ void Slave::listen()
 
 		std::cout << "Slave " << slave_id << " received message: " << message << std::endl;
 
-		// Split message into task id and range (Received: TASKID:RANGE)
-		request_slave request = split_request(message);
+		// Parse message to range (NUM1,NUM2)
+		int start = atoi(message.substr(0, message.find(",")).c_str());
+		int end = atoi(message.substr(message.find(",") + 1).c_str());
+		range n_range = std::make_pair(start, end);
 
-		// Add to queue
-		requests.push(request);
 	}
-}
-
-/**
- * Splits the message into task id and range (TASKID:RANGE)
- * @param request - the message to split (e.g.: 1579344:100000,200000)
- */
-request_slave Slave::split_request(std::string request)
-{
-	// Split the request into task id and range
-	int task_id = std::stoi(request.substr(0, request.find(":")));
-	std::string str_range = request.substr(request.find(":") + 1);
-	int start = std::stoi(str_range.substr(0, str_range.find(",")));
-	int end = std::stoi(str_range.substr(str_range.find(",") + 1));
-	range n_range = std::make_pair(start, end);
-
-	return std::make_pair(task_id, n_range);
-}
-
-/**
- * Gets the task id and primes in the range
- * @param request - the message to grab id (e.g.: 1579344:100000,200000)
- * @return - the task id and range
- */
-std::string Slave::format_response(request_slave request, std::vector<int> primes)
-{
-	std::string response = std::to_string(request.first) + ":";
-	for (int i = 0; i < primes.size(); i++)
-	{
-		response += std::to_string(primes[i]);
-		if (i != primes.size() - 1)
-		{
-			response += " ";
-		}
-	}
-	return response;
 }
