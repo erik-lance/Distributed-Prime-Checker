@@ -81,7 +81,10 @@ void Slave::processor()
 
 			// Send the message back to the master (TASKID:PRIMES)
 			std::string message = std::to_string(request.first) + ":" + prime_string;
+			sendto(this->m_socket, message.c_str(), message.length(), 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
 
+			// Log the message
+			std::cout << "Slave " << slave_id << " sent message: " << message << std::endl;
 		}
 	}
 }
