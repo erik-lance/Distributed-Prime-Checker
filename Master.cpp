@@ -5,6 +5,16 @@ Master::Master(std::string host_address, int port_number)
 	this->host = host_address;
 	this->port = port_number;
 
+	// If Windows, initialize Winsock
+	#ifdef _WIN32
+		WSADATA wsa_data;
+		if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0)
+		{
+			std::cerr << "Error initializing Winsock" << std::endl;
+			exit(1);
+		}
+	#endif
+
 	init();
 }
 
@@ -34,10 +44,32 @@ void Master::init()
 	m_server.sin_port = htons(port);
 	InetPtonA(AF_INET, host.c_str(), &m_server.sin_addr); // Convert the host address to a usable format
 
-	// Bind the socket to the server address
-	if (bind(m_socket, (struct sockaddr*)&m_server, sizeof(m_server)) < 0)
+	// Set the socket to non-blocking
+	#ifdef _WIN32
+		u_long mode = 1;
+		ioctlsocket(m_socket, FIONBIO, &mode);
+	#else
+		fcntl(m_socket, F_SETFL, O_NONBLOCK);
+	#endif
+
+	// Set the socket to reuse the address
+	int opt = 1;
+	if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt)) != 0)
 	{
-		std::cerr << "Error binding socket" << std::endl;
+		// Print full error details
+		char error[1024];
+		strerror_s(error, sizeof(error), errno);
+		std::cerr << "Error setting socket options: " << error << std::endl;
+		exit(1);
+	}
+
+	// Bind the socket to the server address
+	if (bind(m_socket, (struct sockaddr*)&m_server, sizeof(m_server)) != 0)
+	{
+		// Print full error details
+		char error[1024];
+		strerror_s(error, sizeof(error), errno);
+		std::cerr << "Error binding socket: " << error << std::endl;
 		exit(1);
 	}
 }

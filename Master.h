@@ -5,6 +5,7 @@
 #include <string>
 #include <queue>
 #include <vector>
+#include <errno.h>
 #include "PrimeChecker.h"
 #include "Structures.h"
 
