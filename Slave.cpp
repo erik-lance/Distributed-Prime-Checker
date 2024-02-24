@@ -5,6 +5,16 @@ Slave::Slave(int n)
 	this->slave_id = n;
 	this->isRunning = true;
 
+	// If windows, initialize winsock
+	#ifdef _WIN32
+		WSADATA wsa_data;
+		if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0)
+		{
+			std::cerr << "Error initializing Winsock" << std::endl;
+			exit(1);
+		}
+	#endif
+
 	init();
 
 	// Activate thread
