@@ -127,7 +127,7 @@ void Master::receive()
 		std::string client_address = inet_ntoa(client.sin_addr);
 
 		// Client: "C:1,2"
-		// Slave: "1 2 3 5 7 11"
+		// Slave: "ID:1 2 3 5 7 11"
 
 		// Determine the type of message
 		if (buffer[0] == 'C')
@@ -137,7 +137,7 @@ void Master::receive()
 			// Parse to: range<int, int>
 			std::string str_msg = buffer;
 			std::string delimiter = ":";
-			std::string token = str_msg.substr(2, str_msg.find(delimiter));
+			std::string token = str_msg.substr(0, str_msg.find(delimiter));
 			std::string str_range = str_msg.substr(str_msg.find(delimiter) + 1, str_msg.length());
 
 			// Parse the range
@@ -158,7 +158,29 @@ void Master::receive()
 		}
 		else if (buffer[0] == 'S')
 		{
-			// Add the message to the queue
+			// Add the message to the slave response queue
+			// Parse directly into array of integers
+			// Slave sends: "id123879872:1 2 3 5 7 11"
+			std::string str_msg = buffer;
+			std::string delimiter = ":";
+			std::string token = str_msg.substr(0, str_msg.find(delimiter)); // Get the task id
+			std::string str_primes = str_msg.substr(str_msg.find(delimiter) + 1, str_msg.length());
+
+			// Parse the primes
+			std::vector<int> primes;
+
+			while (str_primes.find(" ") != std::string::npos)
+			{
+				std::string prime = str_primes.substr(0, str_primes.find(" "));
+				primes.push_back(std::stoi(prime));
+				str_primes = str_primes.substr(str_primes.find(" ") + 1, str_primes.length());
+			}
+
+			// Get task id from token
+			int task_id = std::stoi(token);
+
+			response_slave response = std::make_pair(task_id, primes);
+			slave_queue.push(response);
 		}
 
 		// Print the message
