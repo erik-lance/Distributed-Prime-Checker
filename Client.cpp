@@ -70,7 +70,6 @@ void Client::init()
 
 /**
  * Run the client. Asks input from user and sends it to the master server.
- * User input is N which is the last number to check for prime numbers.
  */
 void Client::run()
 {
@@ -89,19 +88,18 @@ void Client::run()
 
 	while (running)
 	{
-		int n; // Last number to check for prime numbers
-		std::cout << "Enter how many numbers to check for prime numbers: ";
-		std::cin >> n;
+		int start, end;
+		std::cout << "Enter start: ";
+		std::cin >> start;
+		std::cout << "Enter end: ";
+		std::cin >> end;
 
-		if (n <= 0)
-		{
-			std::cerr << "Stopping ..." << std::endl;
-			running = false;
-			break;
-		}
+
+		// Format message to ("C:NUM1,NUM2")
+		std::string message = "C:" + std::to_string(start) + "," + std::to_string(end);
 
 		// Sends the range to the master server
-		int sent = sendto(m_socket, std::to_string(n).c_str(), std::to_string(n).length(), 0, (struct sockaddr*)&master_server, sizeof(master_server));
+		int sent = sendto(m_socket, message.c_str(), message.size(), 0, (struct sockaddr*)&master_server, sizeof(master_server));
 		if (sent < 0)
 		{
 			// Print full error details
@@ -112,6 +110,12 @@ void Client::run()
 		}
 		else {
 			std::cout << "Sent message to master server" << std::endl;
+
+			// Time and wait for response
+			timing = true;
+			std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
+
 		}
 	}
 }

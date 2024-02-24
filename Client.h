@@ -33,6 +33,8 @@ public:
 private:
 	std ::string host;
 	int port;
+
+	bool timing = false; // Timer flag
 	
 	SOCKET m_socket;
 	struct sockaddr_in m_server;
