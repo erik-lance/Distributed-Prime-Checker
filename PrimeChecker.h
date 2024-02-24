@@ -1,4 +1,7 @@
 #pragma once
+#include <vector>
+#include <string>
+#include <sstream>
 #include "Structures.h"
 
 /**
@@ -29,6 +32,19 @@ static inline std::vector<int> getPrimes(range r) {
 	for (int i = r.first; i <= r.second; i++) {
 		if (isPrime(i))
 			primes.push_back(i);
+	}
+	return primes;
+}
+
+static inline std::string getPrimesHex(range r) {
+	std::string primes;
+	for (int i = r.first; i <= r.second; i++) {
+		if (isPrime(i)) {
+			// Convert to hex
+			std::stringstream stream;
+			stream << std::hex << i;
+			primes += stream.str() + " ";
+		}
 	}
 	return primes;
 }
