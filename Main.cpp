@@ -25,6 +25,10 @@ int main()
 		std::string full_address = client_address;
 		std::string host = full_address.substr(0, full_address.find(":"));
 		int port = atoi(full_address.substr(full_address.find(":") + 1).c_str());
+
+		// Start the client
+		Client client(host, port);
+		client.run();
 	}
 	else
 	{
