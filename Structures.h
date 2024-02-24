@@ -2,6 +2,8 @@
 #include <vector>
 #include <string>
 
+constexpr auto MAX_SPLITS = 100;
+
 // Range of numbers
 typedef std::pair<int, int> range;
 
