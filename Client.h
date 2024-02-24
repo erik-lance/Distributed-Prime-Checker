@@ -2,6 +2,11 @@
 
 #include <iostream>
 #include <string>
+#include <queue>
+#include <vector>
+#include <thread>
+#include <chrono>
+#include "Structures.h"
 
 #ifdef _WIN32
 #include <WinSock2.h>

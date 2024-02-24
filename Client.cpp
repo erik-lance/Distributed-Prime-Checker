@@ -15,7 +15,7 @@ Client::Client(std::string host, int port)
 		}
 	#endif
 
-	run();
+	init();
 }
 
 Client::~Client()
@@ -68,31 +68,39 @@ void Client::init()
 	}
 }
 
+/**
+ * Run the client. Asks input from user and sends it to the master server.
+ * User input is N which is the last number to check for prime numbers.
+ */
 void Client::run()
 {
-	// Create a socket
-	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock == INVALID_SOCKET)
+	bool running = true;
+	while (running)
 	{
-		std::cerr << "Can't create a socket! Quitting" << std::endl;
-		return;
-	}
+		int n; // Last number to check for prime numbers
+		std::cout << "Enter how many numbers to check for prime numbers: ";
+		std::cin >> n;
 
-	// Fill in a hint structure
-	sockaddr_in hint;
-	hint.sin_family = AF_INET;
-	hint.sin_port = htons(port);
-	inet_pton(AF_INET, host.c_str(), &hint.sin_addr);
+		if (n <= 0)
+		{
+			std::cerr << "Stopping ..." << std::endl;
+			running = false;
+			break;
+		}
 
-	// Connect to the server
-	if (connect(sock, (sockaddr*)&hint, sizeof(hint)) == SOCKET_ERROR)
-	{
-		std::cerr << "Can't connect to server! Quitting" << std::endl;
-		closesocket(sock);
-		return;
-	}
-	else {
-		std::cout << "Connected to server!" << std::endl;
-
+		// Sends the range to the master server
+		int sent = sendto(m_socket, std::to_string(n).c_str(), std::to_string(n).length(), 0, (struct sockaddr*)&m_server, sizeof(m_server));
+		if (sent < 0)
+		{
+			// Print full error details
+			char error[1024];
+			strerror_s(error, sizeof(error), errno);
+			std::cerr << "Error sending message: " << error << std::endl;
+			exit(1);
+		}
+		else {
+			std::cout << "Sent message to master server" << std::endl;
+		}
 	}
 }
+	
