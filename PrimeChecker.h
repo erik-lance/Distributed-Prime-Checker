@@ -43,6 +43,23 @@ static inline void primeChecker(range r, std::vector<int>& primes, std::mutex& m
 	}
 }
 
+/**
+ * Threaded prime checker. Hex version.
+ * @param r The range of numbers to check.
+ * @param primes The string to store the prime numbers in hex.
+ * @param mtx The mutex to lock the string.
+ */
+static inline void primeCheckerHex(range r, std::string& primes, std::mutex& mtx) {
+	for (int i = r.first; i <= r.second; i++) {
+		if (isPrime(i)) {
+			std::stringstream stream;
+			stream << std::hex << i;
+			std::lock_guard<std::mutex> lock(mtx);
+			primes += stream.str() + " ";
+		}
+	}
+}
+
 static inline std::vector<int> getPrimes(range r) {
 	std::vector<int> primes;
 	for (int i = r.first; i <= r.second; i++) {
