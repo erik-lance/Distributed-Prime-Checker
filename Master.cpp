@@ -118,59 +118,48 @@ void Master::client_send()
 }
 
 /**
- * Sends message to slaves and master to split the prime checking.
+ * Sends message to slave to split the prime checking.
  */
 void Master::slave_send()
 {
 	while (running)
 	{
 		// Check if there are any messages from client
-		if (!queue.empty())
+		if (!slave_sender_queue.empty())
 		{
 			// Get the message from the queue
-			client_message task = queue.front();
-			queue.pop();
+			request_slave task = slave_sender_queue.front();
+			slave_sender_queue.pop();
 
-			std::cout << "Sending to slaves + master" << std::endl;
-			std::cout << "Task ID: " << task.first.second << std::endl;
-			std::cout << "Address: " << task.first.first << std::endl;
+			std::cout << "Sending to slave" << std::endl;
+			std::cout << "Slave Addr: " << task.first << std::endl;
 			std::cout << "Range: " << task.second.first << " - " << task.second.second << std::endl;
 
+			// Packet Details
+			std::string host = task.first.substr(0, task.first.find(":"));
+			int port = atoi(task.first.substr(task.first.find(":") + 1).c_str());
+			std::string message = std::to_string(task.second.first) + " " + std::to_string(task.second.second);
 
-			// Split the range into equal parts for each slave + master.
-			int n_machines = slave_addresses.size() + 1; // Number of machines (master is the +1)
+			// Address
+			struct sockaddr_in server;
+			server.sin_family = AF_INET;
+			server.sin_port = htons(port);
+			InetPtonA(AF_INET, host.c_str(), &server.sin_addr); // Convert the host address to a usable format
 
-			// Calculate the range for each machine
-			int range_size = (task.second.second - task.second.first) / n_machines;
-			int start = task.second.first;
-			int end = start + range_size;
+			// Send the message
+			int sent = sendto(m_socket, message.c_str(), message.length(), 0, (struct sockaddr*)&server, sizeof(server));
 
-			// Send the message to the slaves
-			for (int i = 0; i < slave_addresses.size()-1; i++)
+			if (sent < 0)
 			{
-				// Create the range
-				range num_range = std::make_pair(start, end);
-
-				// Hash address and range to task id integer
-				int task_id = std::hash<std::string>{}(slave_addresses[i] + std::to_string(start) + std::to_string(end));
-
-				// Create the message
-				request_slave message = std::make_pair(task_id, num_range);
-
-				// Add the message to the queue
-				slave_sender_queue.push(message);
-
-				// Update the range
-				start = end + 1;
-				end = start + range_size;
-
-				// Clamp the end
-				if (end > task.second.second) end = task.second.second;
+				// Print full error details
+				char error[1024];
+				strerror_s(error, sizeof(error), errno);
+				std::cerr << "Error sending message: " << error << std::endl;
+				exit(1);
 			}
-
-			// Process the remaining primes
-			range num_range = std::make_pair(start, task.second.second);
-
+			else {
+				std::cout << "Sent message to slave" << std::endl;
+			}
 		}
 	}
 }
@@ -224,7 +213,7 @@ void Master::receive()
 		inet_ntop(AF_INET, &client.sin_addr, &client_address[0], client_address.size());
 
 		// Client: "C:1,2"
-		// Slave: "ID:1 2 3 5 7 11"
+		// Slave: "1 2 3 5 7 11"
 
 		// Determine the type of message
 		if (buffer[0] == 'C')
@@ -249,11 +238,39 @@ void Master::receive()
 			// Hash address and range to task id integer
 			int task_id = std::hash<std::string>{}(client_address + std::to_string(start) + std::to_string(end));
 
-			client_details details = std::make_pair(client_address, task_id);
-			client_message message = std::make_pair(details, num_range);
+			// Split work for slaves and master
+			int n_machines = slave_addresses.size() + 1; // Number of machines (master is the +1)
 
-			// Add the message to the queue
-			queue.push(message);
+			// Calculate the range for each machine
+			int range_size = (num_range.second - num_range.first) / n_machines;
+			int start = num_range.first;
+			int end = start + range_size;
+
+			// Send the message to the slaves
+			for (int i = 0; i < slave_addresses.size() - 1; i++)
+			{
+				// Create the range
+				range new_range = std::make_pair(start, end);
+
+				// Address of slave
+				std::string slave_addr = slave_addresses[i];
+
+				// Create the message
+				request_slave message = std::make_pair(slave_addr, new_range);
+
+				// Add the message to the queue
+				slave_sender_queue.push(message);
+
+				// Update the range
+				start = end + 1;
+				end = start + range_size;
+
+				// Clamp the end
+				if (end > num_range.second) end = num_range.second;
+			}
+
+			// Process the remaining primes
+			range new_range = std::make_pair(start, num_range.second);
 		}
 		else
 		{

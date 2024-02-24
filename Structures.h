@@ -14,8 +14,8 @@ typedef std::pair<client_details, range> client_message;
 // Master -> Client (Response: <client_details, result>)
 typedef std::pair<client_details, std::vector<int>> response_client;
 
-// Master -> Slave (Request: <task id, range>)
-typedef std::pair<int, range> request_slave;
+// Master -> Slave (Request: <address, range>)
+typedef std::pair<std::string, range> request_slave;
 
 // Slave -> Master (Response: <task id, result>)
 typedef std::pair<int, std::string> response_slave;
