@@ -183,6 +183,8 @@ void Master::receive()
 		// Determine the type of message
 		if (buffer[0] == 'C')
 		{
+			std::cout << "CLIENT Received: " << buffer << std::endl;
+
 			// Parse client messsage to be range<int, int>
 			// Client sends: "C:1,2"
 			// Parse to: range<int, int>
@@ -209,6 +211,8 @@ void Master::receive()
 		}
 		else
 		{
+			std::cout << "SLAVE Received: " << buffer << std::endl;
+
 			// Add the message to the slave response queue
 			// Parse directly into array of integers
 			// Slave sends: "id123879872:1 2 3 5 7 11"
@@ -226,8 +230,5 @@ void Master::receive()
 			response_slave response = std::make_pair(task_id, str_primes);
 			slave_queue.push(response);
 		}
-
-		// Print the message
-		std::cout << "Received: " << buffer << std::endl;
 	}
 }
