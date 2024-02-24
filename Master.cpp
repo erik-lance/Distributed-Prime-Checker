@@ -98,17 +98,17 @@ void Master::slave_send()
 }
 
 /**
- * Receive a message from clients. Queue the message for processing.
+ * Receive a message from client or slave. Store the message in the appropriate queue.
  */
 void Master::receive()
 {
 	// Receive a message
 	char buffer[1024];
 
-	// Client Address
+	// Address
 	struct sockaddr_in client;
 	client.sin_family = AF_INET;
-	client.sin_addr.s_addr = htonl(INADDR_ANY);
+	client.sin_addr.s_addr = htonl(INADDR_ANY); // Address (Can be any address)
 	client.sin_port = htons(atoi(getenv("PORT"))); // Port
 
 	int client_len = sizeof(client);
