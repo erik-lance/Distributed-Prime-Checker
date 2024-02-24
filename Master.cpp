@@ -49,10 +49,12 @@ void Master::loop()
 
 	// Start the sender threads
 	client_sender = std::thread(&Master::client_send, this);
+	slave_sender = std::thread(&Master::slave_send, this);
 
 	// Wait for the threads to finish
 	listener.join();
 	client_sender.join();
+	slave_sender.join();
 }
 
 void Master::start()
@@ -74,6 +76,23 @@ void Master::client_send()
 			// Get the message from the queue
 			response_client task = sender_queue.front();
 			sender_queue.pop();
+		}
+	}
+}
+
+/**
+ * Sends message to the slave.
+ */
+void Master::slave_send()
+{
+	while (running)
+	{
+		// Check if there are any messages in the queue
+		if (!slave_queue.empty())
+		{
+			// Get the message from the queue
+			response_slave task = slave_queue.front();
+			slave_queue.pop();
 		}
 	}
 }
@@ -145,8 +164,4 @@ void Master::receive()
 		// Print the message
 		std::cout << "Received: " << buffer << std::endl;
 	}
-}
-
-void Master::slave_send()
-{
 }
