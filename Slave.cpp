@@ -1,8 +1,10 @@
 #include "Slave.h"
 
-Slave::Slave()
+Slave::Slave(int n)
 {
 	this->isRunning = true;
+
+	init();
 
 	// Activate thread
 	this->listener = std::thread(&Slave::listen, this);
@@ -13,6 +15,32 @@ Slave::~Slave()
 {
 	this->isRunning = false;
 	this->listener.join();
+}
+
+void Slave::init()
+{
+	// Prepare socket
+	this->m_socket = socket(AF_INET, SOCK_DGRAM, 0);
+	if (this->m_socket < 0)
+	{
+		std::cerr << "Error creating socket" << std::endl;
+		exit(1);
+	}
+
+	// Set up the address
+	this->m_server.sin_family = AF_INET;
+
+	// Get address of slave
+	std::string addr = slave_addresses[n];
+	this->m_server.sin_port = htons(atoi(addr.substr(addr.find(":") + 1).c_str())); // Port number of slave
+	this->m_server.sin_addr.s_addr = inet_addr(addr.substr(0, addr.find(":")).c_str()); // IP Address of slave
+
+	// Bind the socket
+	if (bind(this->m_socket, (struct sockaddr*)&this->m_server, sizeof(this->m_server)) < 0)
+	{
+		std::cerr << "Error binding socket" << std::endl;
+		exit(1);
+	}
 }
 
 /**

@@ -25,13 +25,18 @@
 class Slave
 {
 public:
-	Slave();
+	Slave(int n);
 	~Slave();
 private:
+	int m_socket; // Socket
+	struct sockaddr_in m_server; // Server Address
+
 	std::queue<request_slave> requests;
 	std::vector<int> primes;
 	std::thread listener;
 	bool isRunning;
+
+	void init();
 	void processor();
 	void listen();
 };
