@@ -75,6 +75,18 @@ void Client::init()
 void Client::run()
 {
 	bool running = true;
+
+	// Master address
+	std::string master_host = master_address.substr(0, master_address.find(":"));
+	int master_port = atoi(master_address.substr(master_address.find(":") + 1).c_str());
+
+	// Set up the master server address
+	struct sockaddr_in master_server;
+	memset((char*)&master_server, 0, sizeof(master_server));
+	master_server.sin_family = AF_INET;
+	master_server.sin_port = htons(master_port);
+	InetPtonA(AF_INET, master_host.c_str(), &master_server.sin_addr); // Convert the host address to a usable format
+
 	while (running)
 	{
 		int n; // Last number to check for prime numbers
@@ -89,7 +101,7 @@ void Client::run()
 		}
 
 		// Sends the range to the master server
-		int sent = sendto(m_socket, std::to_string(n).c_str(), std::to_string(n).length(), 0, (struct sockaddr*)&m_server, sizeof(m_server));
+		int sent = sendto(m_socket, std::to_string(n).c_str(), std::to_string(n).length(), 0, (struct sockaddr*)&master_server, sizeof(master_server));
 		if (sent < 0)
 		{
 			// Print full error details
