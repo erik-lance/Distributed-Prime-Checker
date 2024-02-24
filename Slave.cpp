@@ -94,8 +94,40 @@ void Slave::processor()
  */
 void Slave::listen()
 {
+	// Socket Address
+	struct sockaddr_in server_addr;
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_addr.s_addr = inet_addr(master_address.substr(0, master_address.find(":")).c_str()); // IP Address of master
+	server_addr.sin_port = htons(atoi(master_address.substr(master_address.find(":") + 1).c_str())); // Port number of master
+	int len = sizeof(server_addr);
+
 	while (isRunning)
 	{
+		// Buffer for message
+		char buffer[1024];
+		memset(buffer, 0, 1024);
 
+		// Receive message
+		int n = recvfrom(this->m_socket, buffer, 1024, 0, (struct sockaddr*)&server_addr, (socklen_t*)&len);
+		if (n < 0)
+		{
+			std::cerr << "Error receiving message" << std::endl;
+			exit(1);
+		}
+
+		// Add message to queue
+		std::string message = std::string(buffer);
+
+		std::cout << "Slave " << slave_id << " received message: " << message << std::endl;
+
+		// Split message into task id and range (Received: TASKID:RANGE)
+		int task_id = std::stoi(message.substr(0, message.find(":")));
+		std::string str_range = message.substr(message.find(":") + 1);
+		int start = std::stoi(str_range.substr(0, str_range.find(",")));
+		int end = std::stoi(str_range.substr(str_range.find(",") + 1));
+		range n_range = std::make_pair(start, end);
+
+		// Add to queue
+		requests.push(std::make_pair(task_id, n_range));
 	}
 }
