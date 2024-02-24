@@ -63,6 +63,5 @@ private:
 	void client_send();
 	void slave_send();
 	void receive();
-	void check_slave_msgs();
 };
 

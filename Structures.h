@@ -18,7 +18,7 @@ typedef std::pair<client_details, std::vector<int>> response_client;
 typedef std::pair<int, range> request_slave;
 
 // Slave -> Master (Response: <task id, result>)
-typedef std::pair<int, std::vector<int>> response_slave;
+typedef std::pair<int, std::string> response_slave;
 
 // Master Address
 const std::string master_address = "127.0.0.1:6379";

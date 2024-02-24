@@ -156,7 +156,7 @@ void Master::receive()
 			// Add the message to the queue
 			queue.push(message);
 		}
-		else if (buffer[0] == 'S')
+		else
 		{
 			// Add the message to the slave response queue
 			// Parse directly into array of integers
@@ -166,20 +166,13 @@ void Master::receive()
 			std::string token = str_msg.substr(0, str_msg.find(delimiter)); // Get the task id
 			std::string str_primes = str_msg.substr(str_msg.find(delimiter) + 1, str_msg.length());
 
-			// Parse the primes
-			std::vector<int> primes;
-
-			while (str_primes.find(" ") != std::string::npos)
-			{
-				std::string prime = str_primes.substr(0, str_primes.find(" "));
-				primes.push_back(std::stoi(prime));
-				str_primes = str_primes.substr(str_primes.find(" ") + 1, str_primes.length());
-			}
+			// No need to parse primes, just store them as a string
+			// because we will send them back to the client
 
 			// Get task id from token
 			int task_id = std::stoi(token);
 
-			response_slave response = std::make_pair(task_id, primes);
+			response_slave response = std::make_pair(task_id, str_primes);
 			slave_queue.push(response);
 		}
 
