@@ -1,6 +1,8 @@
 #pragma once
 
 #include <iostream>
+#include <string>
+
 #ifdef _WIN32
 #include <WinSock2.h>
 #include <WS2tcpip.h>
@@ -19,13 +21,17 @@
 class Client
 {
 public:
-	Client(char* host, int port);
+	Client(std::string host, int port);
 	~Client();
 
 	void run();
 private:
-	// Host and port of the master server
-	const char* host;
+	std ::string host;
 	int port;
+	
+	SOCKET m_socket;
+	struct sockaddr_in m_server;
+
+	void init();
 };
 
