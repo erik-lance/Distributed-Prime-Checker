@@ -68,11 +68,14 @@ void Client::init()
 	}
 
 	// Start the listener thread
+	this->isRunning = true;
 	this->listener = std::thread(&Client::listen, this);
 }
 
 void Client::listen()
 {
+	std::cout << "Now listening for messages" << std::endl;
+
 	// Master address
 	std::string master_host = master_address.substr(0, master_address.find(":"));
 	int master_port = atoi(master_address.substr(master_address.find(":") + 1).c_str());
@@ -91,7 +94,7 @@ void Client::listen()
 	while (isRunning)
 	{
 		// Receive message
-		int n = recvfrom(this->m_socket, buffer, 1024, 0, (struct sockaddr*)&master_server, (socklen_t*)&len);
+		int n = recvfrom(this->m_socket, buffer, sizeof(buffer), 0, (struct sockaddr*)&master_server, (socklen_t*)&len);
 
 		if (n < 0)
 		{
@@ -118,6 +121,7 @@ void Client::listen()
 		}
 
 		std::string message = std::string(buffer);
+		// std::cout << "Received message: " << message << std::endl;
 		
 		// If message is DONE, stop and print the number of primes
 		if (message == "DONE")
@@ -134,6 +138,9 @@ void Client::listen()
 		else {
 			// Add message to primesHex
 			primesHex += message;
+
+			// Reset buffer
+			memset(buffer, 0, sizeof(buffer));
 		}
 	}
 
