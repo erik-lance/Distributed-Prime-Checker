@@ -50,6 +50,35 @@ void Slave::init()
 	this->m_server.sin_port = htons(port);
 	InetPtonA(AF_INET, host.c_str(), &this->m_server.sin_addr); // Convert the host address to a usable format
 
+	// Set the socket to non-blocking
+	#ifdef _WIN32
+		u_long mode = 1;
+		ioctlsocket(this->m_socket, FIONBIO, &mode);
+	#else
+		fcntl(this->m_socket, F_SETFL, O_NONBLOCK);
+	#endif
+
+	// Set the socket to reuse the address
+	int opt = 1;
+	if (setsockopt(this->m_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt)) != 0)
+	{
+		// Print full error details
+		char error[1024];
+		strerror_s(error, sizeof(error), errno);
+		std::cerr << "Error setting socket options: " << error << std::endl;
+		exit(1);
+	}
+
+	// Set socket to be able to use MAX_BUFFER size
+	int buffer_size = MAX_BUFFER;
+	if (setsockopt(this->m_socket, SOL_SOCKET, SO_RCVBUF, (char*)&buffer_size, sizeof(buffer_size)) != 0)
+	{
+		// Print full error details
+		char error[1024];
+		strerror_s(error, sizeof(error), errno);
+		std::cerr << "Error setting socket buffer size: " << error << std::endl;
+		exit(1);
+	}
 
 	// Bind the socket
 	if (bind(this->m_socket, (struct sockaddr*)&this->m_server, sizeof(this->m_server)) < 0)
@@ -196,24 +225,18 @@ void Slave::listen()
 		size_t pos = 0;
 		std::string token;
 		message = "";
-		int count = 0;
 		while ((pos = primesHex.find(delimiter)) != std::string::npos) {
 			token = primesHex.substr(0, pos);
 			primesHex.erase(0, pos + delimiter.length());
 
-			// If primesHex is empty or count is MAX_SPLITS, add to queue
-			if (primesHex.empty() || count == MAX_SPLITS-1)
-			{
-				if (!token.empty()) { message += token + " "; }
-
+			// If primesHex is empty or message length is greater than buffer size
+			if (message.length() < MAX_BUFFER - 8 && !token.empty()) {
+				message += token + " ";
+			}
+			else {
 				// Add to queue
 				messages.push(message);
-				count = 0;
 				message = "";
-			}
-			else { 
-				message += token + " ";
-				count++; 
 			}
 		}
 

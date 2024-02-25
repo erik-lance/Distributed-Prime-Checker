@@ -64,6 +64,17 @@ void Master::init()
 		exit(1);
 	}
 
+	// Set the socket to be able to use MAX_BUFFER size
+	int buffer_size = MAX_BUFFER;
+	if (setsockopt(m_socket, SOL_SOCKET, SO_RCVBUF, (char*)&buffer_size, sizeof(buffer_size)) != 0)
+	{
+		// Print full error details
+		char error[1024];
+		strerror_s(error, sizeof(error), errno);
+		std::cerr << "Error setting socket options: " << error << std::endl;
+		exit(1);
+	}
+
 	// Bind the socket to the server address
 	if (bind(m_socket, (struct sockaddr*)&m_server, sizeof(m_server)) != 0)
 	{
@@ -126,8 +137,7 @@ void Master::client_send()
 			std::string task = sender_queue.front();
 			sender_queue.pop();
 
-			std::cout << "Sending to client" << std::endl;
-			std::cout << "Message: " << task << std::endl;
+			std::cout << "Sending to client: " << task.length() << " bytes" << std::endl;
 
 			// Send the message
 			int sent = sendto(m_socket, task.c_str(), task.length(), 0, (struct sockaddr*)&server, sizeof(server));
@@ -210,8 +220,8 @@ void Master::slave_send()
  */
 void Master::receive()
 {
-	// Receive a message
-	char buffer[1024];
+	// Create dynamic buffer of size MAX_BUFFER
+	std::vector<char> buffer(MAX_BUFFER);
 
 	// Address
 	struct sockaddr_in client;
@@ -226,7 +236,7 @@ void Master::receive()
 
 	while (running)
 	{
-		int bytes_received = recvfrom(m_socket, buffer, sizeof(buffer), 0, (struct sockaddr*)&client, &client_len);
+		int bytes_received = recvfrom(m_socket, buffer.data(), MAX_BUFFER, 0, (struct sockaddr*)&client, (socklen_t*)&client_len);
 
 		if (bytes_received < 0)
 		{
@@ -256,13 +266,13 @@ void Master::receive()
 		// Slave: "1 2 3 5 7 11"
 
 		// Add message to queue
-		std::string message = std::string(buffer);
+		std::string message = std::string(buffer.data(), bytes_received);
 		std::cout << "Received message: " << message << std::endl;
 
 		message_queue.push(message);
 
-		// Reset the bufferq
-		memset(buffer, 0, sizeof(buffer));
+		// Clear the buffer
+		buffer.clear();
 	}
 }
 
@@ -399,26 +409,22 @@ void Master::split_packets()
 	std::string delimiter = " ";
 	size_t pos = 0;
 	std::string token;
+
+	// Message to send that can dynamically grow to MAX_BUFFER size
 	std::string message = "";
-	int count = 0;
 
 	while ((pos = primesHex.find(delimiter)) != std::string::npos) {
 		token = primesHex.substr(0, pos);
 		primesHex.erase(0, pos + delimiter.length()); // Erase the token until the delimiter (including the delimiter)
 
-		// If primesHex is empty or count is MAX_SPLITS, add to queue
-		if (primesHex.empty() || count == MAX_SPLITS-1)
-		{
-			if (!token.empty()) { message += token + " "; }
-
-			// Add to queue
-			sender_queue.push(message);
-			count = 0;
-			message = "";
+		// If primesHex is empty or message length is greater than buffer size
+		if (message.length() < MAX_BUFFER - 8 && !token.empty()) {
+			message += token + " ";
 		}
 		else {
-			message += token + " ";
-			count++;
+			// Add to queue
+			sender_queue.push(message);
+			message = "";
 		}
 	}
 

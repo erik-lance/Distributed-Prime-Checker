@@ -57,6 +57,17 @@ void Client::init()
 		exit(1);
 	}
 
+	// Set socket to be able to use MAX_BUFFER size
+	int buffer_size = MAX_BUFFER;
+	if (setsockopt(m_socket, SOL_SOCKET, SO_RCVBUF, (char*)&buffer_size, sizeof(buffer_size)) != 0)
+	{
+		// Print full error details
+		char error[1024];
+		strerror_s(error, sizeof(error), errno);
+		std::cerr << "Error setting socket buffer size: " << error << std::endl;
+		exit(1);
+	}
+
 	// Bind the socket to the server address
 	if (bind(m_socket, (struct sockaddr*)&m_server, sizeof(m_server)) != 0)
 	{
@@ -86,13 +97,13 @@ void Client::listen()
 	InetPtonA(AF_INET, master_host.c_str(), &master_server.sin_addr); // Convert the host address to a usable format
 
 	// Buffer for the message
-	char buffer[1024];
+	std::vector<char> buffer(MAX_BUFFER);
 	int len = sizeof(master_server);
 
 	while (isRunning)
 	{
 		// Receive message
-		int n = recvfrom(this->m_socket, buffer, sizeof(buffer), 0, (struct sockaddr*)&master_server, (socklen_t*)&len);
+		int n = recvfrom(this->m_socket, buffer.data(), MAX_BUFFER, 0, (struct sockaddr*)&master_server, (socklen_t*)&len);
 
 		if (n < 0)
 		{
@@ -118,7 +129,7 @@ void Client::listen()
 			#endif
 		}
 
-		std::string message = std::string(buffer);
+		std::string message = std::string(buffer.data(), n);
 		// std::cout << "Received message: " << message << std::endl;
 		
 		// If message is DONE, stop and print the number of primes
@@ -136,9 +147,9 @@ void Client::listen()
 		else {
 			// Add message to primesHex
 			primesHex += message + " ";
-
-			// Reset buffer
-			memset(buffer, 0, sizeof(buffer));
+			
+			// Reset the buffer
+			buffer.clear();
 		}
 	}
 
@@ -197,6 +208,17 @@ void Client::run()
 			}
 
 			std::cout << "Number of primes: " << n_primes << std::endl;
+
+			// Print primes
+			std::vector<int> primes = convertHexPrimes(primesHex);
+
+			// Reorder
+			std::cout << "Primes: ";
+			for (int i = 0; i < primes.size(); i++)
+			{
+				std::cout << primes[i] << " ";
+			}
+			std::cout << std::endl;
 
 			// Clear primesHex
 			primesHex = "";
