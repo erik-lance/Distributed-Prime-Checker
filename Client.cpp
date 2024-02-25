@@ -135,7 +135,7 @@ void Client::listen()
 		}
 		else {
 			// Add message to primesHex
-			primesHex += message;
+			primesHex += message + " ";
 
 			// Reset buffer
 			memset(buffer, 0, sizeof(buffer));

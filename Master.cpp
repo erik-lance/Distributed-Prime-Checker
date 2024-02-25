@@ -338,7 +338,7 @@ void Master::processor()
 				range thread_range = std::make_pair(new_range.first, new_range.first + range_size_per_thread);
 
 				for (int i = 0; i < n_threads; i++) {
-				
+					std::cout << "Range: " << thread_range.first << " - " << thread_range.second << std::endl; 
 					// Use `primeCheckerHex` from PrimeChecker.h which takes
 					// (range r, std::string& primes, std::mutex& mtx)
 					threads.push_back(std::thread(primeCheckerHex, thread_range, std::ref(primesHex), std::ref(mtx)));
@@ -407,8 +407,10 @@ void Master::split_packets()
 		primesHex.erase(0, pos + delimiter.length()); // Erase the token until the delimiter (including the delimiter)
 
 		// If primesHex is empty or count is MAX_SPLITS, add to queue
-		if (primesHex.empty() || count == MAX_SPLITS)
+		if (primesHex.empty() || count == MAX_SPLITS-1)
 		{
+			if (!token.empty()) { message += token; }
+
 			// Add to queue
 			sender_queue.push(message);
 			count = 0;
