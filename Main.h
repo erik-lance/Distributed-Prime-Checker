@@ -4,3 +4,4 @@
 #include "Structures.h"
 #include "Client.h"
 #include "Master.h"
+#include "Slave.h"

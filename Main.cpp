@@ -41,12 +41,15 @@ int main()
 
 		// Ask for server id
 		int server_id;
-		std::cout << "Enter server id: ";
+		std::cout << "(0-indexed) Enter server id: ";
 		std::cin >> server_id;
 
 		std::string full_address = slave_addresses[server_id];
 		std::string host = full_address.substr(0, full_address.find(":"));
 		int port = atoi(full_address.substr(full_address.find(":") + 1).c_str());
+
+		// Start the slave server
+		Slave slave(server_id, n_threads);
 	}
 
 	return 0;
