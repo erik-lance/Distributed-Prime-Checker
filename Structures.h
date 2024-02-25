@@ -4,6 +4,7 @@
 
 constexpr auto MAX_BUFFER = 32768;
 constexpr auto MAX_SPLITS = 8192;
+constexpr auto num_threads = 4;
 
 // Range of numbers
 typedef std::pair<int, int> range;

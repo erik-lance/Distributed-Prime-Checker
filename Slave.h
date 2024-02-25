@@ -25,7 +25,7 @@
 class Slave
 {
 public:
-	Slave(int n, int threads);
+	Slave(int n);
 	~Slave();
 private:
 	int slave_id;

@@ -1,10 +1,10 @@
 #include "Master.h"
 
-Master::Master(std::string host_address, int port_number, int threads)
+Master::Master(std::string host_address, int port_number)
 {
 	this->host = host_address;
 	this->port = port_number;
-	this->n_threads = threads;
+	this->n_threads = num_threads;
 
 	// If Windows, initialize Winsock
 	#ifdef _WIN32

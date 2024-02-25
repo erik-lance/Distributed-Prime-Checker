@@ -28,7 +28,7 @@
 class Master
 {
 public:
-	Master(std::string host_address, int port_number, int threads);
+	Master(std::string host_address, int port_number);
 	~Master();
 	void start();
 private:

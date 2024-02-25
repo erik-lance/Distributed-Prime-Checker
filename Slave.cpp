@@ -1,9 +1,9 @@
 #include "Slave.h"
 
-Slave::Slave(int n, int n_threads)
+Slave::Slave(int n)
 {
 	this->slave_id = n;
-	this->n_threads = n_threads;
+	this->n_threads = num_threads;
 	this->isRunning = true;
 
 	// If windows, initialize winsock
