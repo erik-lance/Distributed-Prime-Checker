@@ -166,7 +166,7 @@ void Master::slave_send()
 			// Packet Details
 			std::string host = task.first.substr(0, task.first.find(":"));
 			int port = atoi(task.first.substr(task.first.find(":") + 1).c_str());
-			std::string message = std::to_string(task.second.first) + " " + std::to_string(task.second.second);
+			std::string message = std::to_string(task.second.first) + "," + std::to_string(task.second.second);
 
 			// Address
 			struct sockaddr_in server;
@@ -238,10 +238,6 @@ void Master::receive()
 				}
 			#endif
 		}
-
-		// Add the message to the queue with address
-		std::string client_address;
-		inet_ntop(AF_INET, &client.sin_addr, &client_address[0], client_address.size());
 
 		// Client: "C:1,2"
 		// Slave: "1 2 3 5 7 11"
