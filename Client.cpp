@@ -198,6 +198,9 @@ void Client::run()
 
 			std::cout << "Number of primes: " << n_primes << std::endl;
 
+			// Clear primesHex
+			primesHex = "";
+
 		}
 	}
 }

@@ -413,7 +413,9 @@ void Master::split_packets()
 	// Once done sending all primes, send another message
 	// confirming that all primes have been sent
 	sender_queue.push("DONE");
+	
 
-	// Reset machines_done
+	// Reset
 	machines_done = 0;
+	primesHex = "";
 }
