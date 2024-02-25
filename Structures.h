@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-constexpr auto MAX_BUFFER = 65536;
+constexpr auto MAX_BUFFER = 32768;
 constexpr auto MAX_SPLITS = 8192;
 
 // Range of numbers
@@ -31,5 +31,5 @@ const std::string client_address = "192.168.1.5:6378";
 
 // Slave Addresses
 const std::vector<std::string> slave_addresses = {
-	"192.168.1.4:5000"
+
 };
