@@ -264,8 +264,8 @@ void Master::receive()
 
 			// Calculate the range for each machine
 			int range_size = (num_range.second - num_range.first) / n_machines;
-			int start = num_range.first;
-			int end = start + range_size;
+			start = num_range.first;
+			end = start + range_size;
 
 			// Send the message to the slaves
 			for (int i = 0; i < slave_addresses.size() - 1; i++)

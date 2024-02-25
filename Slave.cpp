@@ -186,7 +186,7 @@ void Slave::listen()
 		std::string delimiter = " ";
 		size_t pos = 0;
 		std::string token;
-		std::string message = "";
+		message = "";
 		int count = 0;
 		while ((pos = primesHex.find(delimiter)) != std::string::npos) {
 			token = primesHex.substr(0, pos);
