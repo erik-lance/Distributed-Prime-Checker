@@ -101,19 +101,42 @@ void Master::start()
  */
 void Master::client_send()
 {
+	// Packet Details
+	std::string host = client_address.substr(0, client_address.find(":"));
+	int port = atoi(client_address.substr(client_address.find(":") + 1).c_str());
+
+	// Address
+	struct sockaddr_in server;
+	server.sin_family = AF_INET;
+	server.sin_port = htons(port);
+	InetPtonA(AF_INET, host.c_str(), &server.sin_addr); // Convert the host address to a usable format
+
 	while (running)
 	{
 		// Check if there are any messages in the queue
 		if (!sender_queue.empty())
 		{
 			// Get the message from the queue
-			response_client task = sender_queue.front();
+			std::string task = sender_queue.front();
 			sender_queue.pop();
 
 			std::cout << "Sending to client" << std::endl;
-			std::cout << "Task ID: " << task.first.second << std::endl;
-			std::cout << "Address: " << task.first.first << std::endl;
-			std::cout << "Primes: " << task.second.size() << std::endl;
+			std::cout << "Message: " << task << std::endl;
+
+			// Send the message
+			int sent = sendto(m_socket, task.c_str(), task.length(), 0, (struct sockaddr*)&server, sizeof(server));
+
+			if (sent < 0)
+			{
+				// Print full error details
+				char error[1024];
+				strerror_s(error, sizeof(error), errno);
+				std::cerr << "Error sending message: " << error << std::endl;
+				exit(1);
+			}
+			else {
+				std::cout << "Sent message to client" << std::endl;
+			}
 		}
 	}
 }
@@ -272,6 +295,64 @@ void Master::receive()
 
 			// Process the remaining primes
 			range new_range = std::make_pair(start, num_range.second);
+			int range_size_per_thread = getSizePerThread(new_range.first, new_range.second, n_threads);
+
+			// Prepare threads
+			std::vector<std::thread> threads;
+			std::string primesHex;
+
+			for (int i = 0; i < n_threads; i++)
+			{
+				// Use `primeCheckerHex` from PrimeChecker.h which takes
+				// (range r, std::string& primes, std::mutex& mtx)
+				threads.push_back(std::thread(primeCheckerHex, new_range, std::ref(primesHex), std::ref(mtx)));
+
+				// Update range
+				new_range.first = new_range.second + 1;
+				new_range.second = new_range.first + range_size_per_thread;
+
+				// Clamp range
+				if (new_range.second > end) new_range.second = end;
+			}
+
+			// Join threads
+			for (int i = 0; i < n_threads; i++)
+			{
+				threads[i].join();
+			}
+
+			// Once done calculating, split and add to queue
+			// until reached end of message. Splits by MAX_SPLITS
+			// at a time.
+			std::string delimiter = " ";
+			size_t pos = 0;
+			std::string token;
+			std::string message = "";
+			int count = 0;
+			while ((pos = primesHex.find(delimiter)) != std::string::npos) {
+				token = primesHex.substr(0, pos);
+				primesHex.erase(0, pos + delimiter.length());
+
+				// If primesHex is empty or count is MAX_SPLITS, add to queue
+				if (primesHex.empty() || count == MAX_SPLITS)
+				{
+					// Add to queue
+					sender_queue.push(message);
+					start += range_size_per_thread;
+					count = 0;
+					message = "";
+				}
+				else {
+					message += token + " ";
+					count++;
+				}
+			}
+
+			// Once done sending all primes, send another message
+			// confirming that all primes have been sent
+			sender_queue.push("DONE");
+			
+
 		}
 		else
 		{

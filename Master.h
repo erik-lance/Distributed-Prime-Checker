@@ -36,6 +36,7 @@ private:
 	int port; // Port Number
 	int n_threads;
 	bool running = true; // Running flag
+	std::mutex mtx;
 
 	// Socket
 	SOCKET m_socket;
@@ -45,7 +46,7 @@ private:
 	std::queue<client_message> queue;
 
 	// Queue for messages to the client
-	std::queue<response_client> sender_queue;
+	std::queue<std::string> sender_queue;
 
 	// Queue for messages from the slave servers
 	std::queue<response_slave> slave_queue;
