@@ -2,7 +2,8 @@
 #include <vector>
 #include <string>
 
-constexpr auto MAX_SPLITS = 100;
+constexpr auto MAX_BUFFER = 65536;
+constexpr auto MAX_SPLITS = 8192;
 
 // Range of numbers
 typedef std::pair<int, int> range;
@@ -23,13 +24,12 @@ typedef std::pair<std::string, range> request_slave;
 typedef std::pair<int, std::string> response_slave;
 
 // Master Address
-const std::string master_address = "127.0.0.1:6379";
+const std::string master_address = "192.168.1.5:6379";
 
 // Client Address
-const std::string client_address = "127.0.0.1:6378";
+const std::string client_address = "192.168.1.5:6378";
 
 // Slave Addresses
 const std::vector<std::string> slave_addresses = {
-	"127.0.0.1:5000",
-	"127.0.0.1:5001",
+	"192.168.1.4:5000"
 };
