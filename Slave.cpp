@@ -85,7 +85,16 @@ void Slave::processor()
 			// Format if needed
 			std::string message = request;
 
-			sendto(this->m_socket, message.c_str(), message.length(), 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
+			int sent = sendto(this->m_socket, message.c_str(), message.length(), 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
+
+			if (sent < 0)
+			{
+				// Print full error details
+				char error[1024];
+				strerror_s(error, sizeof(error), errno);
+				std::cerr << "Error sending message: " << error << std::endl;
+				exit(1);
+			}
 
 			// Log the message
 			std::cout << "Slave " << slave_id << " sent message: " << message << std::endl;
