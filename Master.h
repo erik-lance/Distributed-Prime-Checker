@@ -43,14 +43,11 @@ private:
 	SOCKET m_socket;
 	struct sockaddr_in m_server; // Server Address
 
-	// Queue for messages from the client
-	std::queue<client_message> queue;
+	// Queue for messages to process
+	std::queue<std::string> message_queue;
 
 	// Queue for messages to the client
 	std::queue<std::string> sender_queue;
-
-	// Queue for messages from the slave servers
-	std::queue<response_slave> slave_queue;
 
 	// Queue for messages to the slave servers
 	std::queue<request_slave> slave_sender_queue;
@@ -59,6 +56,7 @@ private:
 
 	// Threads
 	std::thread listener;
+	std::thread msg_processor;
 	std::thread client_sender;
 	std::thread slave_sender;
 
@@ -68,6 +66,7 @@ private:
 	void client_send();
 	void slave_send();
 	void receive();
+	void processor();
 	void split_packets();
 };
 
