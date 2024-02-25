@@ -36,6 +36,7 @@ private:
 	int port; // Port Number
 	int n_threads;
 	bool running = true; // Running flag
+	int machines_done = 0; // Number of machines done
 	std::mutex mtx;
 
 	// Socket

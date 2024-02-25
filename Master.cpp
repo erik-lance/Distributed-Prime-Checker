@@ -204,6 +204,9 @@ void Master::receive()
 
 	int client_len = sizeof(client);
 
+	// Split work for slaves and master
+	int n_machines = slave_addresses.size() + 1; // Number of machines (master is the +1)
+
 	while (running)
 	{
 		int bytes_received = recvfrom(m_socket, buffer, sizeof(buffer), 0, (struct sockaddr*)&client, &client_len);
@@ -259,12 +262,6 @@ void Master::receive()
 			// Create the range
 			range num_range = std::make_pair(start, end);
 
-			// Hash address and range to task id integer
-			int task_id = std::hash<std::string>{}(client_address + std::to_string(start) + std::to_string(end));
-
-			// Split work for slaves and master
-			int n_machines = slave_addresses.size() + 1; // Number of machines (master is the +1)
-
 			// Calculate the range for each machine
 			int range_size = (num_range.second - num_range.first) / n_machines;
 			int start = num_range.first;
@@ -319,6 +316,11 @@ void Master::receive()
 			{
 				threads[i].join();
 			}
+
+			machines_done += 1;
+
+			// Split the packets if machines_done == n_machines
+			if (machines_done == n_machines) { split_packets(); }
 		}
 		else
 		{
@@ -335,11 +337,16 @@ void Master::receive()
 			// No need to parse primes, just store them as a string
 			// because we will send them back to the client
 
-			// Get task id from token
-			int task_id = std::stoi(token);
+			// Check if the message is "DONE"
+			if (str_primes == "DONE") { machines_done += 1; }
+			else
+			{
+				// Append to primesHex
+				primesHex += str_primes;
+			}
 
-			response_slave response = std::make_pair(task_id, str_primes);
-			slave_queue.push(response);
+			// Split the packets if machines_done == n_machines
+			if (machines_done == n_machines) { split_packets(); }
 		}
 	}
 }
