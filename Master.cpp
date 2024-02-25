@@ -115,6 +115,8 @@ void Master::client_send()
 	server.sin_port = htons(port);
 	InetPtonA(AF_INET, host.c_str(), &server.sin_addr); // Convert the host address to a usable format
 
+	int batches = 0; // For debugging
+
 	while (running)
 	{
 		// Check if there are any messages in the queue
@@ -140,10 +142,17 @@ void Master::client_send()
 			}
 			else {
 				std::cout << "Sent message to client" << std::endl;
+				batches++;
 
 				// Sent details
 
-				std::cout << "Sent: " << sent << " bytes" << std::endl;
+				std::cout << "Sent: " << sent << " bytes\n" << std::endl;
+				
+				// If message was DONE, print number of batches done
+				if (task == "DONE") { 
+					std::cout << "Batches: " << batches << std::endl;
+					batches = 0;
+				}
 			}
 		}
 	}
@@ -276,7 +285,7 @@ void Master::processor()
 			// Determine the type of message
 			if (msg[1] == ':')
 			{
-				std::cout << "CLIENT Received: " << msg << std::endl;
+				std::cout << "\n--------------- CLIENT Received: " << msg << " ---------------" << std::endl;
 
 				// Parse client messsage to be range<int, int>
 				// Client sends: "C:1,2"
@@ -394,7 +403,7 @@ void Master::split_packets()
 
 	while ((pos = primesHex.find(delimiter)) != std::string::npos) {
 		token = primesHex.substr(0, pos);
-		primesHex.erase(0, pos + delimiter.length());
+		primesHex.erase(0, pos + delimiter.length()); // Erase the token until the delimiter (including the delimiter)
 
 		// If primesHex is empty or count is MAX_SPLITS, add to queue
 		if (primesHex.empty() || count == MAX_SPLITS)
