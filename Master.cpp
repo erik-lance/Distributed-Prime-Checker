@@ -409,7 +409,7 @@ void Master::split_packets()
 		// If primesHex is empty or count is MAX_SPLITS, add to queue
 		if (primesHex.empty() || count == MAX_SPLITS-1)
 		{
-			if (!token.empty()) { message += token; }
+			if (!token.empty()) { message += token + " "; }
 
 			// Add to queue
 			sender_queue.push(message);
