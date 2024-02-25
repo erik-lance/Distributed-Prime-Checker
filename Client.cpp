@@ -66,6 +66,77 @@ void Client::init()
 		std::cerr << "Error binding socket: " << error << std::endl;
 		exit(1);
 	}
+
+	// Start the listener thread
+	this->listener = std::thread(&Client::listen, this);
+}
+
+void Client::listen()
+{
+	// Master address
+	std::string master_host = master_address.substr(0, master_address.find(":"));
+	int master_port = atoi(master_address.substr(master_address.find(":") + 1).c_str());
+
+	// Set up the master server address
+	struct sockaddr_in master_server;
+	memset((char*)&master_server, 0, sizeof(master_server));
+	master_server.sin_family = AF_INET;
+	master_server.sin_port = htons(master_port);
+	InetPtonA(AF_INET, master_host.c_str(), &master_server.sin_addr); // Convert the host address to a usable format
+
+	// Buffer for the message
+	char buffer[1024];
+	int len = sizeof(master_server);
+
+	while (isRunning)
+	{
+		// Receive message
+		int n = recvfrom(this->m_socket, buffer, 1024, 0, (struct sockaddr*)&master_server, (socklen_t*)&len);
+
+		if (n < 0)
+		{
+			// Error handling
+			#ifdef _WIN32
+				int error_code = WSAGetLastError();
+				if (error_code != WSAEWOULDBLOCK) {
+					char error[1024];
+					strerror_s(error, sizeof(error), error_code);
+					std::cerr << "Error receiving message: " << error << std::endl;
+					exit(1);
+				}
+				else {
+					continue;
+				}
+			#else
+			if (errno != EWOULDBLOCK && errno != EAGAIN) {
+					char error[1024];
+					strerror_r(errno, error, sizeof(error));
+					std::cerr << "Error receiving message: " << error << std::endl;
+					exit(1);
+				}
+			#endif
+		}
+
+		std::string message = std::string(buffer);
+		
+		// If message is DONE, stop and print the number of primes
+		if (message == "DONE")
+		{
+			end = std::chrono::steady_clock::now();
+			std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
+
+			// Convert primesHex to get the number of primes
+			std::vector<int> primes = convertHexPrimes(primesHex);
+			n_primes = primes.size();
+
+			timing = false;
+		}
+		else {
+			// Add message to primesHex
+			primesHex += message;
+		}
+	}
+
 }
 
 /**
@@ -112,9 +183,15 @@ void Client::run()
 			std::cout << "Sent message to master server" << std::endl;
 
 			// Time and wait for response
-			timing = true;
-			std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+			this->start = std::chrono::steady_clock::now();
+			this->timing = true;
 
+			while (timing)
+			{
+				// Wait for response
+			}
+
+			std::cout << "Number of primes: " << n_primes << std::endl;
 
 		}
 	}

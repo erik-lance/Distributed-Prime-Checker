@@ -7,6 +7,7 @@
 #include <thread>
 #include <chrono>
 #include "Structures.h"
+#include "PrimeChecker.h"
 
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -35,10 +36,20 @@ private:
 	int port;
 
 	bool timing = false; // Timer flag
+	std::chrono::steady_clock::time_point start; // Start time
+	std::chrono::steady_clock::time_point end; // End time
+	std::string primesHex; // Hexadecimal string of primes
+	int n_primes = 0;
 	
 	SOCKET m_socket;
 	struct sockaddr_in m_server;
 
+	std::queue<std::string> messages;
+	std::thread listener;
+	bool isRunning;
+
 	void init();
+	void listen();
+	
 };
 
