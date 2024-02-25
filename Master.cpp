@@ -136,6 +136,10 @@ void Master::client_send()
 			}
 			else {
 				std::cout << "Sent message to client" << std::endl;
+
+				// Sent details
+
+				std::cout << "Sent: " << sent << " bytes" << std::endl;
 			}
 		}
 	}
@@ -383,4 +387,7 @@ void Master::split_packets()
 	// Once done sending all primes, send another message
 	// confirming that all primes have been sent
 	sender_queue.push("DONE");
+
+	// Reset machines_done
+	machines_done = 0;
 }
