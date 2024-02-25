@@ -286,16 +286,16 @@ void Master::processor()
 				std::string str_range = msg.substr(msg.find(delimiter) + 1, msg.length());
 
 				// Parse the range
-				int start = std::stoi(str_range.substr(0, str_range.find(",")));
-				int end = std::stoi(str_range.substr(str_range.find(",") + 1, str_range.length()));
+				int range_start = std::stoi(str_range.substr(0, str_range.find(",")));
+				int range_end = std::stoi(str_range.substr(str_range.find(",") + 1, str_range.length()));
 
 				// Create the range
-				range num_range = std::make_pair(start, end);
+				range num_range = std::make_pair(range_start, range_end);
 
 				// Calculate the range for each machine
 				int range_size = (num_range.second - num_range.first) / n_machines;
-				start = num_range.first;
-				end = start + range_size;
+				int start = num_range.first;
+				int end = start + range_size;
 
 				// Send the message to the slaves
 				for (int i = 0; i < n_machines - 1; i++)
@@ -338,7 +338,7 @@ void Master::processor()
 					new_range.second = new_range.first + range_size_per_thread;
 
 					// Clamp range
-					if (new_range.second > end) new_range.second = end;
+					if (new_range.second > range_end) new_range.second = range_end;
 				}
 
 				// Join threads
