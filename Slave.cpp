@@ -209,5 +209,9 @@ void Slave::listen()
 		// Once done sending all primes, send another message
 		// confirming that all primes have been sent
 		messages.push("DONE");
+
+		// Reset everything
+		primesHex = "";
+		memset(buffer, 0, sizeof(buffer));
 	}
 }

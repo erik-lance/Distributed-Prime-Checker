@@ -352,6 +352,9 @@ void Master::receive()
 			// Split the packets if machines_done == n_machines
 			if (machines_done == n_machines) { split_packets(); }
 		}
+
+		// Reset the bufferq
+		memset(buffer, 0, sizeof(buffer));
 	}
 }
 
