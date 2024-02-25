@@ -299,7 +299,6 @@ void Master::receive()
 
 			// Prepare threads
 			std::vector<std::thread> threads;
-			std::string primesHex;
 
 			for (int i = 0; i < n_threads; i++)
 			{
@@ -320,39 +319,6 @@ void Master::receive()
 			{
 				threads[i].join();
 			}
-
-			// Once done calculating, split and add to queue
-			// until reached end of message. Splits by MAX_SPLITS
-			// at a time.
-			std::string delimiter = " ";
-			size_t pos = 0;
-			std::string token;
-			std::string message = "";
-			int count = 0;
-			while ((pos = primesHex.find(delimiter)) != std::string::npos) {
-				token = primesHex.substr(0, pos);
-				primesHex.erase(0, pos + delimiter.length());
-
-				// If primesHex is empty or count is MAX_SPLITS, add to queue
-				if (primesHex.empty() || count == MAX_SPLITS)
-				{
-					// Add to queue
-					sender_queue.push(message);
-					start += range_size_per_thread;
-					count = 0;
-					message = "";
-				}
-				else {
-					message += token + " ";
-					count++;
-				}
-			}
-
-			// Once done sending all primes, send another message
-			// confirming that all primes have been sent
-			sender_queue.push("DONE");
-			
-
 		}
 		else
 		{
@@ -376,4 +342,38 @@ void Master::receive()
 			slave_queue.push(response);
 		}
 	}
+}
+
+void Master::split_packets()
+{
+	// Once done calculating, split and add to queue
+	// until reached end of message. Splits by MAX_SPLITS
+	// at a time.
+	std::string delimiter = " ";
+	size_t pos = 0;
+	std::string token;
+	std::string message = "";
+	int count = 0;
+
+	while ((pos = primesHex.find(delimiter)) != std::string::npos) {
+		token = primesHex.substr(0, pos);
+		primesHex.erase(0, pos + delimiter.length());
+
+		// If primesHex is empty or count is MAX_SPLITS, add to queue
+		if (primesHex.empty() || count == MAX_SPLITS)
+		{
+			// Add to queue
+			sender_queue.push(message);
+			count = 0;
+			message = "";
+		}
+		else {
+			message += token + " ";
+			count++;
+		}
+	}
+
+	// Once done sending all primes, send another message
+	// confirming that all primes have been sent
+	sender_queue.push("DONE");
 }

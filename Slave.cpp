@@ -197,7 +197,6 @@ void Slave::listen()
 			{
 				// Add to queue
 				messages.push(message);
-				start += range_size_per_thread;
 				count = 0;
 				message = "";
 			}
