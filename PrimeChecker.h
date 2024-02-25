@@ -29,6 +29,13 @@ static inline bool isPrime(int n) {
 }
 
 /**
+ * Splits the range into n_threads.
+ */
+static inline int getSizePerThread(int start, int end, int n_threads) {
+	return (end - start) / n_threads;
+}
+
+/**
  * Threaded prime checker.
  * @param r The range of numbers to check.
  * @param primes The vector to store the prime numbers.

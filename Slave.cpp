@@ -153,7 +153,7 @@ void Slave::listen()
 		
 
 		// Split the range into n_threads
-		int range_size_per_thread = (end - start) / n_threads;
+		int range_size_per_thread = getSizePerThread(start, end, n_threads);
 		range n_range = std::make_pair(start, start + range_size_per_thread);
 
 		// Prepare threads
