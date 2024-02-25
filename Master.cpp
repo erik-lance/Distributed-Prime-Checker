@@ -268,7 +268,7 @@ void Master::receive()
 			end = start + range_size;
 
 			// Send the message to the slaves
-			for (int i = 0; i < slave_addresses.size() - 1; i++)
+			for (int i = 0; i < n_machines - 1; i++)
 			{
 				// Create the range
 				range new_range = std::make_pair(start, end);
