@@ -74,8 +74,6 @@ void Client::init()
 
 void Client::listen()
 {
-	std::cout << "Now listening for messages" << std::endl;
-
 	// Master address
 	std::string master_host = master_address.substr(0, master_address.find(":"));
 	int master_port = atoi(master_address.substr(master_address.find(":") + 1).c_str());
