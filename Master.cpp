@@ -335,19 +335,20 @@ void Master::processor()
 
 				// Prepare threads
 				std::vector<std::thread> threads;
+				range thread_range = std::make_pair(new_range.first, new_range.first + range_size_per_thread);
 
-				for (int i = 0; i < n_threads; i++)
-				{
+				for (int i = 0; i < n_threads; i++) {
+				
 					// Use `primeCheckerHex` from PrimeChecker.h which takes
 					// (range r, std::string& primes, std::mutex& mtx)
-					threads.push_back(std::thread(primeCheckerHex, new_range, std::ref(primesHex), std::ref(mtx)));
+					threads.push_back(std::thread(primeCheckerHex, thread_range, std::ref(primesHex), std::ref(mtx)));
 
 					// Update range
-					new_range.first = new_range.second + 1;
-					new_range.second = new_range.first + range_size_per_thread;
+					thread_range.first = thread_range.second + 1;
+					thread_range.second = thread_range.first + range_size_per_thread;
 
 					// Clamp range
-					if (new_range.second > range_end) new_range.second = range_end;
+					if (thread_range.second > new_range.second) thread_range.second = new_range.second;
 				}
 
 				// Join threads
