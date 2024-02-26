@@ -312,6 +312,21 @@ void Master::receive()
 			std::string message = std::string(buffer.data(), bytes_received);
 			std::cout << "Received message" << std::endl;
 
+			// IF message is CLOSE, close the socket
+			if (message == "CLOSE")
+			{
+				// Close the socket
+				#ifdef _WIN32
+					closesocket(server_socket);
+				#else
+					close(server_socket);
+				#endif
+
+				// Remove the socket from the list of connected sockets
+				connected_sockets.erase(connected_sockets.begin() + i);
+				continue;
+			}
+
 			socket_message msg = std::make_pair(server_socket, message);
 			message_queue.push(msg);
 

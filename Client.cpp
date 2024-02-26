@@ -20,6 +20,16 @@ Client::Client(std::string host, int port)
 
 Client::~Client()
 {
+	// Send a message to the master server to close the connection
+	send(m_socket, "CLOSE", 5, 0);
+
+	// Close the socket
+	#ifdef _WIN32
+		closesocket(m_socket);
+		WSACleanup();
+	#else
+		close(m_socket);
+	#endif
 }
 
 void Client::init()
