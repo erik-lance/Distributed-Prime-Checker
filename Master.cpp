@@ -376,7 +376,7 @@ void Master::processor()
 			{
 				std::cout << "SLAVE Received" << std::endl;
 
-				if (msg == "DONE") { machines_done += 1; continue; }
+				if (msg == "DONE") { machines_done += 1; std::cout << "Finished Slave" << std::endl; }
 				else
 				{
 					// No need to parse primes, just store them as a string
