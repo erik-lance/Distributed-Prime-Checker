@@ -413,20 +413,33 @@ void Master::split_packets()
 	// Message to send that can dynamically grow to MAX_BUFFER size
 	std::string message = "";
 
-	while ((pos = primesHex.find(delimiter)) != std::string::npos) {
-		token = primesHex.substr(0, pos);
-		primesHex.erase(0, pos + delimiter.length()); // Erase the token until the delimiter (including the delimiter)
-
-		// If primesHex is empty or message length is greater than buffer size
-		if (message.length() < MAX_BUFFER - 8 && !token.empty()) {
-			message += token + " ";
+	const int LARGEST_SIZE = MAX_BUFFER - 1;
+	// Get list of primes until MAX_BUFFER - 1
+	// If last character is not a space, go back until a space.
+	// If MAX_BUFFER - 1 is greater than primesHex length, then
+	// add the rest of the primes to the message.
+	while (primesHex.length() > LARGEST_SIZE) {
+		// If last character is not a space, go back until a space
+		if (primesHex[LARGEST_SIZE] != ' ') {
+			int i = LARGEST_SIZE;
+			while (primesHex[i] != ' ') { i--; }
+			message = primesHex.substr(0, i);
+			primesHex.erase(0, i); // Erase the token until the delimiter (including the delimiter)
 		}
 		else {
-			// Add to queue
-			sender_queue.push(message);
-			message = "";
+			message = primesHex.substr(0, LARGEST_SIZE);
+			primesHex.erase(0, LARGEST_SIZE); // Erase the token until the delimiter (including the delimiter)
 		}
+
+		// Add to queue
+		sender_queue.push(message);
+		message = "";
 	}
+
+	// Add the rest of the primes to the message
+	message = primesHex;
+	primesHex = "";
+	sender_queue.push(message);
 
 	// Once done sending all primes, send another message
 	// confirming that all primes have been sent
