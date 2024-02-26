@@ -125,17 +125,6 @@ void Slave::processor()
  */
 void Slave::listen()
 {
-	int port = atoi(master_address.substr(master_address.find(":") + 1).c_str());
-	std::string host = master_address.substr(0, master_address.find(":"));
-
-	// Socket Address
-	struct sockaddr_in server_addr;
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(port); // Port number of master
-	InetPtonA(AF_INET, host.c_str(), &server_addr.sin_addr); // Convert the host address to a usable format
-
-	int len = sizeof(server_addr);
-
 	while (isRunning)
 	{
 		// Buffer for message
