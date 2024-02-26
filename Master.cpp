@@ -374,10 +374,15 @@ void Master::processor()
 			}
 			else
 			{
-				std::cout << "SLAVE Received" << std::endl;
+				std::cout << "SLAVE Received: " << msg.length() << " bytes" << std::endl;
 
-				if (msg == "DONE") { machines_done += 1; std::cout << "Finished Slave" << std::endl; }
-				else
+				if (msg[1] == 'O') {
+					machines_done += 1; 
+					std::cout << "Finished Slave" << std::endl; 
+
+					// Split the packets if machines_done == n_machines
+					if (machines_done == n_machines) { split_packets(); }
+				} else
 				{
 					// No need to parse primes, just store them as a string
 					// because we will send them back to the clien
@@ -390,11 +395,9 @@ void Master::processor()
 					std::string str_primes = msg.substr(msg.find(delimiter) + 1, msg.length());
 
 					// Append to primesHex
+					std::lock_guard<std::mutex> lock(mtx);
 					primesHex += str_primes;
 				}
-
-				// Split the packets if machines_done == n_machines
-				if (machines_done == n_machines) { split_packets(); }
 			}
 		}
 	}
