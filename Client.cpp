@@ -70,6 +70,17 @@ void Client::init()
 		exit(1);
 	}
 
+	// Don't fragment packets
+	int opt2 = 1;
+	if (setsockopt(m_socket, IPPROTO_TCP, IP_DONTFRAGMENT, (char*)&opt2, sizeof(opt2)) != 0)
+	{
+		// Print full error details
+		char error[1024];
+		strerror_s(error, sizeof(error), errno);
+		std::cerr << "Error setting socket options: " << error << std::endl;
+		exit(1);
+	}
+
 	// Start the listener thread
 	this->isRunning = true;
 }

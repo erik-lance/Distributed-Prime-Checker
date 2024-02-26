@@ -68,6 +68,17 @@ void Master::init()
 		exit(1);
 	}
 
+	// Don't Fragment
+	int optval = 1;
+	if (setsockopt(m_socket, IPPROTO_IP, IP_DONTFRAGMENT, (char*)&optval, sizeof(optval)) != 0)
+	{
+		// Print full error details
+		char error[1024];
+		strerror_s(error, sizeof(error), errno);
+		std::cerr << "Error setting socket options: " << error << std::endl;
+		exit(1);
+	}
+
 	// Bind the socket to the server address
 	if (bind(m_socket, (struct sockaddr*)&m_server, sizeof(m_server)) != 0)
 	{
@@ -333,9 +344,6 @@ void Master::receive()
 
 			socket_message msg = std::make_pair(server_socket, message);
 			message_queue.push(msg);
-
-			// Clear the buffer
-			buffer.clear();
 		}
 	}
 }

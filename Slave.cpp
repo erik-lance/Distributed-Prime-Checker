@@ -71,6 +71,18 @@ void Slave::init()
 		exit(1);
 	}
 
+	// Don't fragment
+	int opt2 = 1;
+	if (setsockopt(this->m_socket, IPPROTO_TCP, IP_DONTFRAGMENT, (char*)&opt2, sizeof(opt2)) != 0)
+	{
+		// Print full error details
+		char error[1024];
+		strerror_s(error, sizeof(error), errno);
+		std::cerr << "Error setting socket options: " << error << std::endl;
+		exit(1);
+	}
+
+
 	// Connect to the master
 	if (connect(this->m_socket, (struct sockaddr*)&this->m_server, sizeof(this->m_server)) < 0)
 	{
