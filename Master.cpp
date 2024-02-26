@@ -492,6 +492,10 @@ void Master::processor()
 
 void Master::split_packets()
 {
+	// Count primes before splitting
+	int n_primes = countHexPrimes(primesHex);
+	std::cout << "Number of primes: " << n_primes << std::endl;
+
 	packetSplitter(primesHex, client_sender_queue);
 
 	// Reset

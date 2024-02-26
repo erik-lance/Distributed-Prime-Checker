@@ -194,6 +194,10 @@ void Slave::listen()
 		{
 			threads[i].join();
 		}
+		
+		// Print num of primes before splitting
+		int n_primes = countHexPrimes(primesHex);
+		std::cout << "Number of primes: " << n_primes << std::endl;
 
 		// Split packets
 		packetSplitter(primesHex, messages);
