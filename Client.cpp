@@ -32,19 +32,11 @@ void Client::init()
 		exit(1);
 	}
 
-	// Set up the server address
+	// Set up the server address (master's address)
 	memset((char*)&m_server, 0, sizeof(m_server));
 	m_server.sin_family = AF_INET;
-	m_server.sin_port = htons(port);
-	InetPtonA(AF_INET, host.c_str(), &m_server.sin_addr); // Convert the host address to a usable format
-
-	// Set the socket to non-blocking
-	#ifdef _WIN32
-		u_long mode = 1;
-		ioctlsocket(m_socket, FIONBIO, &mode);
-	#else
-		fcntl(m_socket, F_SETFL, O_NONBLOCK);
-	#endif
+	m_server.sin_port = htons(atoi(master_address.substr(master_address.find(":") + 1).c_str()));
+	InetPtonA(AF_INET, master_address.substr(0, master_address.find(":")).c_str(), &m_server.sin_addr);
 
 	// Set the socket to reuse the address
 	int opt = 1;
@@ -68,139 +60,8 @@ void Client::init()
 		exit(1);
 	}
 
-	// Bind the socket to the server address
-	if (bind(m_socket, (struct sockaddr*)&m_server, sizeof(m_server)) != 0)
-	{
-		// Print full error details
-		char error[1024];
-		strerror_s(error, sizeof(error), errno);
-		std::cerr << "Error binding socket: " << error << std::endl;
-		exit(1);
-	}
-
-	// Prepare master socket
-	// Master address
-	std::string master_host = master_address.substr(0, master_address.find(":"));
-	int master_port = atoi(master_address.substr(master_address.find(":") + 1).c_str());
-
-	// Set up the master server address
-	memset((char*)&master_server, 0, sizeof(master_server));
-	master_server.sin_family = AF_INET;
-	master_server.sin_port = htons(master_port);
-	InetPtonA(AF_INET, master_host.c_str(), &master_server.sin_addr); // Convert the host address to a usable format
-
-	// Create a socket
-	if ((master_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-	{
-		std::cerr << "Error creating socket" << std::endl;
-		exit(1);
-	}
-
-	// Start listening for incoming connections
-	if (listen(m_socket, 1) < 0)
-	{
-		// Print full error details
-		char error[1024];
-		strerror_s(error, sizeof(error), errno);
-		std::cerr << "Error listening: " << error << std::endl;
-		exit(1);
-	}
-
 	// Start the listener thread
 	this->isRunning = true;
-	this->listener = std::thread(&Client::receive, this);
-}
-
-void Client::receive()
-{
-	// Buffer for the message
-	std::vector<char> buffer(MAX_BUFFER);
-
-	while (isRunning)
-	{
-		// Accept a connection
-		SOCKET accept_socket = accept(m_socket, (struct sockaddr*)&m_server, (socklen_t*)&m_server);
-		if (accept_socket < 0)
-		{
-			// Error handling
-			#ifdef _WIN32
-				int error_code = WSAGetLastError();
-				if (error_code != WSAEWOULDBLOCK) {
-					char error[1024];
-					strerror_s(error, sizeof(error), error_code);
-					std::cerr << "[" << error_code << "] Error accepting connection: " << error << std::endl;
-					exit(1);
-				}
-				else {
-					continue;
-				}
-			#else
-			if (errno != EWOULDBLOCK && errno != EAGAIN) {
-					char error[1024];
-					strerror_r(errno, error, sizeof(error));
-					std::cerr << "Error accepting connection: " << error << std::endl;
-					exit(1);
-				}
-			else {
-					continue;
-				}
-			#endif
-		}
-
-		// If connection is not up, continue
-		if (accept_socket == INVALID_SOCKET) { continue; }
-
-		// Receive message
-		int n = recv(accept_socket, buffer.data(), buffer.size(), 0);
-
-		if (n < 0)
-		{
-			// Error handling
-			#ifdef _WIN32
-				int error_code = WSAGetLastError();
-				if (error_code != WSAEWOULDBLOCK) {
-					char error[1024];
-					strerror_s(error, sizeof(error), error_code);
-					std::cerr << "[" << error_code << "] Error receiving message: " << error << std::endl;
-					exit(1);
-				}
-				else {
-					continue;
-				}
-			#else
-			if (errno != EWOULDBLOCK && errno != EAGAIN) {
-					char error[1024];
-					strerror_r(errno, error, sizeof(error));
-					std::cerr << "Error receiving message: " << error << std::endl;
-					exit(1);
-				}
-			#endif
-		}
-
-		std::string message = std::string(buffer.data(), n);
-		// std::cout << "Received message: " << message << std::endl;
-		
-		// If message is DONE, stop and print the number of primes
-		if (message == "DONE")
-		{
-			end = std::chrono::steady_clock::now();
-			std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
-
-			// Convert primesHex to get the number of primes
-			std::vector<int> primes = convertHexPrimes(primesHex);
-			n_primes = primes.size();
-
-			timing = false;
-		}
-		else {
-			// Add message to primesHex
-			primesHex += message + " ";
-			
-			// Reset the buffer
-			buffer.clear();
-		}
-	}
-
 }
 
 /**
@@ -210,32 +71,42 @@ void Client::run()
 {
 	bool running = true;
 
+	std::cout << "Connecting to master server... : " << master_address << std::endl;
+
+	// Connect to the master server
+	if (connect(m_socket, (struct sockaddr*)&m_server, sizeof(m_server)) < 0)
+	{
+		// Print full error details
+		#ifdef _WIN32
+			int error_code = WSAGetLastError();
+			char error[1024];
+			strerror_s(error, sizeof(error), error_code);
+			std::cerr << "[" << error_code << "] Error connecting to master server: " << error << std::endl;
+			exit(1);
+		#else
+			char error[1024];
+			strerror_r(errno, error, sizeof(error));
+			std::cerr << "Error connecting to master server: " << error << std::endl;
+			exit(1);
+		#endif
+	}
+
+	std::cout << "Connected to master server" << std::endl;
+
 	while (running)
 	{
-		int start, end;
+		int start_n, end_n;
 		std::cout << "Enter start: ";
-		std::cin >> start;
+		std::cin >> start_n;
 		std::cout << "Enter end: ";
-		std::cin >> end;
+		std::cin >> end_n;
 
 
 		// Format message to ("C:NUM1,NUM2")
-		std::string message = "C:" + std::to_string(start) + "," + std::to_string(end);
-
-		// Connect to the master server
-		if (connect(master_socket, (struct sockaddr*)&master_server, sizeof(master_server)) < 0)
-		{
-			// Print full error details
-			char error[1024];
-			strerror_s(error, sizeof(error), errno);
-			std::cerr << "Error connecting to master server: " << error << std::endl;
-			exit(1);
-		}
-
-		std::cout << "Connected to master server" << std::endl;
+		std::string message = "C:" + std::to_string(start_n) + "," + std::to_string(end_n);
 
 		// Sends the range to the master server
-		int sent = send(master_socket, message.c_str(), message.size(), 0);
+		int sent = send(m_socket, message.c_str(), message.size(), 0);
 		if (sent < 0)
 		{
 			// Print full error details
@@ -251,9 +122,58 @@ void Client::run()
 			this->start = std::chrono::steady_clock::now();
 			this->timing = true;
 
+			// Block until done
 			while (timing)
 			{
-				// Wait for response
+				// Receive message
+				std::vector<char> buffer(MAX_BUFFER);
+				int n = recv(m_socket, buffer.data(), buffer.size(), 0);
+
+				if (n < 0)
+				{
+					// Error handling
+					#ifdef _WIN32
+						int error_code = WSAGetLastError();
+						if (error_code != WSAEWOULDBLOCK) {
+							char error[1024];
+							strerror_s(error, sizeof(error), error_code);
+							std::cerr << "[" << error_code << "] Error receiving message: " << error << std::endl;
+							exit(1);
+						}
+						else {
+							continue;
+						}
+					#else
+						if (errno != EWOULDBLOCK && errno != EAGAIN) {
+							char error[1024];
+							strerror_r(errno, error, sizeof(error));
+							std::cerr << "Error receiving message: " << error << std::endl;
+							exit(1);
+						}
+					#endif
+				}
+
+				std::string message = std::string(buffer.data(), n);
+
+				// If message is DONE, stop and print the number of primes
+				if (message == "DONE")
+				{
+					end = std::chrono::steady_clock::now();
+					std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
+
+					// Convert primesHex to get the number of primes
+					std::vector<int> primes = convertHexPrimes(primesHex);
+					n_primes = primes.size();
+
+					timing = false;
+				}
+				else {
+					// Add message to primesHex
+					primesHex += message + " ";
+					
+					// Reset the buffer
+					buffer.clear();
+				}
 			}
 
 			std::cout << "Number of primes: " << n_primes << std::endl;

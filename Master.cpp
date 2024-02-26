@@ -45,14 +45,6 @@ void Master::init()
 	m_server.sin_port = htons(port);
 	InetPtonA(AF_INET, host.c_str(), &m_server.sin_addr); // Convert the host address to a usable format
 
-	// Set the socket to non-blocking
-	#ifdef _WIN32
-		u_long mode = 1;
-		ioctlsocket(m_socket, FIONBIO, &mode);
-	#else
-		fcntl(m_socket, F_SETFL, O_NONBLOCK);
-	#endif
-
 	// Set the socket to reuse the address
 	int opt = 1;
 	if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt)) != 0)
@@ -229,7 +221,7 @@ void Master::receive()
 	struct sockaddr_in server;
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = htonl(INADDR_ANY); // Address (Can be any address)
-	server.sin_port = htons(6378); // Port
+	server.sin_port = htons(port); // Port number
 
 	int server_len = sizeof(server);
 

@@ -52,7 +52,6 @@ private:
 	bool isRunning;
 
 	void init();
-	void receive();
 	
 };
 
