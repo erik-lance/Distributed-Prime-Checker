@@ -474,8 +474,9 @@ void Master::processor()
 					// Slave sends: ":1 2 3 5 7 11"
 
 					// Append to primesHex
-					std::lock_guard<std::mutex> lock(mtx);
+					mtx.lock();
 					primesHex += message;
+					mtx.unlock();
 				}
 			}
 		}
