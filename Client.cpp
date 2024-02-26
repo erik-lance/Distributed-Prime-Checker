@@ -179,7 +179,7 @@ void Client::run()
 				}
 				else {
 					// Add message to primesHex
-					primesHex += message + " ";
+					primesHex += message;
 					
 					// Reset the buffer
 					buffer.clear();
