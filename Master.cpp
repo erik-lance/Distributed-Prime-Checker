@@ -196,10 +196,14 @@ void Master::client_send()
 			if (sent < 0)
 			{
 				// Print full error details
-				char error[1024];
-				strerror_s(error, sizeof(error), errno);
-				std::cerr << "Error sending message: " << error << std::endl;
-				exit(1);
+				#ifdef _WIN32
+					int error_code = WSAGetLastError();
+					std::cerr << "Error sending message: " << error_code << std::endl;
+				#else
+					char error[1024];
+					strerror_r(errno, error, sizeof(error));
+					std::cerr << "Error sending message: " << error << std::endl;
+				#endif	
 			}
 			else {
 				std::cout << "Sent message to client" << std::endl;
