@@ -71,7 +71,7 @@ void Client::init()
 	}
 
 	// Don't fragment packets
-	int opt2 = 1;
+	int opt2 = 3;
 	if (setsockopt(m_socket, IPPROTO_IP, IP_DONTFRAGMENT, (char*)&opt2, sizeof(opt2)) != 0)
 	{
 		// Print full error details

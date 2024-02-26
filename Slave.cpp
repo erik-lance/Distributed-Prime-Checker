@@ -72,7 +72,7 @@ void Slave::init()
 	}
 
 	// Don't fragment
-	int opt2 = 1;
+	int opt2 = 3;
 	if (setsockopt(this->m_socket, IPPROTO_IP, IP_DONTFRAGMENT, (char*)&opt2, sizeof(opt2)) != 0)
 	{
 		// Print full error details

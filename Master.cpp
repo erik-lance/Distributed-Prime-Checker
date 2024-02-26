@@ -69,7 +69,7 @@ void Master::init()
 	}
 
 	// Don't Fragment
-	int optval = 1;
+	int optval = 3;
 	if (setsockopt(m_socket, IPPROTO_IP, IP_DONTFRAGMENT, (char*)&optval, sizeof(optval)) != 0)
 	{
 		// Print full error details
