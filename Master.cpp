@@ -267,7 +267,7 @@ void Master::receive()
 
 		// Add message to queue
 		std::string message = std::string(buffer.data(), bytes_received);
-		std::cout << "Received message: " << message << std::endl;
+		std::cout << "Received message" << std::endl;
 
 		message_queue.push(message);
 
@@ -290,7 +290,7 @@ void Master::processor()
 			message_queue.pop();
 
 			// Process the message
-			std::cout << "Processing message: " << msg << std::endl;
+			std::cout << "Processing message" << std::endl;
 
 			// Determine the type of message
 			if (msg[1] == ':')
