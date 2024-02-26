@@ -218,31 +218,8 @@ void Slave::listen()
 			threads[i].join();
 		}
 
-		// Once done calculating, split and add to queue
-		// until reached end of message. Splits by MAX_SPLITS
-		// at a time.
-		std::string delimiter = " ";
-		size_t pos = 0;
-		std::string token;
-		message = "";
-		while ((pos = primesHex.find(delimiter)) != std::string::npos) {
-			token = primesHex.substr(0, pos);
-			primesHex.erase(0, pos + delimiter.length());
-
-			// If primesHex is empty or message length is greater than buffer size
-			if (message.length() < MAX_BUFFER - 8 && !token.empty()) {
-				message += token + " ";
-			}
-			else {
-				// Add to queue
-				messages.push(message);
-				message = "";
-			}
-		}
-
-		// Once done sending all primes, send another message
-		// confirming that all primes have been sent
-		messages.push("DONE");
+		// Split packets
+		packetSplitter(primesHex, messages);
 
 		// Reset everything
 		primesHex = "";
