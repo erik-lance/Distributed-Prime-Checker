@@ -22,7 +22,6 @@ int main()
 
 		// Start the master server
 		Master master(host, port);
-		master.start();
 	}
 	else if (process_type == "2")
 	{

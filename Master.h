@@ -43,6 +43,9 @@ private:
 	SOCKET m_socket;
 	struct sockaddr_in m_server; // Server Address
 
+	// Connections
+	std::vector<SOCKET> connected_sockets; // Connected Sockets
+
 	SOCKET client_socket; // Client Socket
 
 	// Queue for messages to process

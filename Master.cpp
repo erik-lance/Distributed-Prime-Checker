@@ -24,6 +24,7 @@ Master::~Master()
 	// Close the socket
 	#ifdef _WIN32
 		closesocket(m_socket);
+		WSACleanup();
 	#else
 		close(m_socket);
 	#endif
@@ -86,6 +87,56 @@ void Master::init()
 		std::cerr << "Error listening on socket: " << error << std::endl;
 		exit(1);
 	}
+
+	// Accept connections from client and slaves
+	int n_machines = slave_addresses.size() + 1; // Number of machines (client is the +1)
+	while (connected_sockets.size() < n_machines)
+	{
+		// Accept a connection
+		SOCKET server_socket = accept(m_socket, NULL, NULL);
+		std::cout << "Accepted: " << server_socket << "\n" << std::endl;
+
+		if (server_socket < 0)
+		{
+			// Error handling
+			#ifdef _WIN32
+				int error_code = WSAGetLastError();
+				if (error_code != WSAEWOULDBLOCK) {
+					char error[1024];
+					strerror_s(error, sizeof(error), error_code);
+					std::cerr << "Error accepting connection: " << error << std::endl;
+					exit(1);
+				}
+				else {
+					continue;
+				}
+			#else
+				if (errno != EWOULDBLOCK && errno != EAGAIN) {
+					char error[1024];
+					strerror_r(errno, error, sizeof(error));
+					std::cerr << "Error accepting connection: " << error << std::endl;
+					exit(1);
+				}
+			#endif
+		}
+
+		// If connection is not up, continue
+		if (server_socket == INVALID_SOCKET) { continue; }
+
+		// Add the socket to the list of connected sockets
+		connected_sockets.push_back(server_socket);
+	}
+
+	// Set to non-blocking
+	#ifdef _WIN32
+		u_long mode = 1;
+		ioctlsocket(m_socket, FIONBIO, &mode);
+	#else
+		fcntl(m_socket, F_SETFL, O_NONBLOCK);
+	#endif
+
+	std::cout << "All machines connected. Starting receivers and senders." << std::endl;
+	start();
 }
 
 void Master::loop()
@@ -118,16 +169,6 @@ void Master::start()
  */
 void Master::client_send()
 {
-	// Packet Details
-	std::string host = client_address.substr(0, client_address.find(":"));
-	int port = atoi(client_address.substr(client_address.find(":") + 1).c_str());
-
-	// Address
-	struct sockaddr_in server;
-	server.sin_family = AF_INET;
-	server.sin_port = htons(port);
-	InetPtonA(AF_INET, host.c_str(), &server.sin_addr); // Convert the host address to a usable format
-
 	int batches = 0; // For debugging
 
 	while (running)
@@ -230,75 +271,53 @@ void Master::receive()
 
 	while (running)
 	{
-		// Accept a connection
-		SOCKET server_socket = accept(m_socket, NULL, NULL);
-		
+		// For each socket connected under connected_sockets, receive the message
+		for (int i = 0; i < connected_sockets.size(); i++) {
+			SOCKET server_socket = connected_sockets[i];
 
-		if (server_socket < 0)
-		{
-			// Error handling
-			#ifdef _WIN32
-				int error_code = WSAGetLastError();
-				if (error_code != WSAEWOULDBLOCK) {
-					char error[1024];
-					strerror_s(error, sizeof(error), error_code);
-					std::cerr << "Error accepting connection: " << error << std::endl;
-					exit(1);
-				}
-				else {
-					continue;
-				}
-			#else
-			if (errno != EWOULDBLOCK && errno != EAGAIN) {
-					char error[1024];
-					strerror_r(errno, error, sizeof(error));
-					std::cerr << "Error accepting connection: " << error << std::endl;
-					exit(1);
-				}
-			#endif
+			// Clear the buffer
+			buffer.clear();
+			buffer.resize(MAX_BUFFER);
+
+			// Receive the message
+			int bytes_received = recv(server_socket, buffer.data(), buffer.size(), 0);
+
+			if (bytes_received < 0)
+			{
+				// Error handling
+				#ifdef _WIN32
+					int error_code = WSAGetLastError();
+					if (error_code != WSAEWOULDBLOCK) {
+						char error[1024];
+						strerror_s(error, sizeof(error), error_code);
+						std::cerr << "[" << error_code << "] Error receiving message: " << error << std::endl;
+						exit(1);
+					}
+					else {
+						continue;
+					}
+				#else
+					if (errno != EWOULDBLOCK && errno != EAGAIN) {
+						char error[1024];
+						strerror_r(errno, error, sizeof(error));
+						std::cerr << "Error receiving message: " << error << std::endl;
+						exit(1);
+					}
+				#endif
+			}
+
+			// Client: "C:1,2"
+			// Slave: "1 2 3 5 7 11"
+			// Add message to queue
+			std::string message = std::string(buffer.data(), bytes_received);
+			std::cout << "Received message" << std::endl;
+
+			socket_message msg = std::make_pair(server_socket, message);
+			message_queue.push(msg);
+
+			// Clear the buffer
+			buffer.clear();
 		}
-
-		// If connection is not up, continue
-		if (server_socket == INVALID_SOCKET) { continue; }
-
-		int bytes_received = recv(server_socket, buffer.data(), buffer.size(), 0);
-
-		if (bytes_received < 0)
-		{
-			// Error handling
-			#ifdef _WIN32
-				int error_code = WSAGetLastError();
-				if (error_code != WSAEWOULDBLOCK) {
-					char error[1024];
-					strerror_s(error, sizeof(error), error_code);
-					std::cerr << "[" << error_code << "] Error receiving message: " << error << std::endl;
-					exit(1);
-				}
-				else {
-					continue;
-				}
-			#else
-				if (errno != EWOULDBLOCK && errno != EAGAIN) {
-					char error[1024];
-					strerror_r(errno, error, sizeof(error));
-					std::cerr << "Error receiving message: " << error << std::endl;
-					exit(1);
-				}
-			#endif
-		}
-
-		// Client: "C:1,2"
-		// Slave: "1 2 3 5 7 11"
-
-		// Add message to queue
-		std::string message = std::string(buffer.data(), bytes_received);
-		std::cout << "Received message" << std::endl;
-
-		socket_message msg = std::make_pair(server_socket, message);
-		message_queue.push(msg);
-
-		// Clear the buffer
-		buffer.clear();
 	}
 }
 
