@@ -209,16 +209,24 @@ void Client::run()
 
 			std::cout << "Number of primes: " << n_primes << std::endl;
 
-			// Print primes
-			std::vector<int> primes = convertHexPrimes(primesHex);
+			// Ask user if they want to print primes
+			std::string print;
+			std::cout << "Print primes? (y/n): ";
+			std::cin >> print;
 
-			// Reorder
-			std::cout << "Primes: ";
-			for (int i = 0; i < primes.size(); i++)
+			if (print == "y")
 			{
-				std::cout << primes[i] << " ";
+				// Print primes
+				std::vector<int> primes = convertHexPrimes(primesHex);
+
+				// Reorder
+				std::cout << "Primes: ";
+				for (int i = 0; i < primes.size(); i++)
+				{
+					std::cout << primes[i] << " ";
+				}
+				std::cout << std::endl;
 			}
-			std::cout << std::endl;
 
 			// Clear primesHex
 			primesHex = "";
