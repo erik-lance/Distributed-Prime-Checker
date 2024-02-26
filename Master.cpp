@@ -374,7 +374,7 @@ void Master::processor()
 			}
 			else
 			{
-				std::cout << "SLAVE Received: " << msg << std::endl;
+				std::cout << "SLAVE Received" << std::endl;
 
 				// Add the message to the slave response queue
 				// Parse directly into array of integers

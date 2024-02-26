@@ -108,11 +108,8 @@ void Slave::processor()
 		if (!messages.empty())
 		{
 			// Get the message
-			std::string request = messages.front();
+			std::string message = messages.front();
 			messages.pop();
-
-			// Format if needed
-			std::string message = request;
 
 			int sent = sendto(this->m_socket, message.c_str(), message.length(), 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
 
@@ -126,7 +123,12 @@ void Slave::processor()
 			}
 
 			// Log the message
-			std::cout << "Slave " << slave_id << " sent message: " << message << std::endl;
+			std::cout << "Slave " << slave_id << " sent message" << std::endl;
+
+			if (message == "DONE")
+			{
+				std::cout << "Slave " << slave_id << " is done" << std::endl;
+			}
 		}
 	}
 }
