@@ -123,6 +123,14 @@ void Master::init()
 		// If connection is not up, continue
 		if (server_socket == INVALID_SOCKET) { continue; }
 
+		// Set to non-blocking
+		#ifdef _WIN32
+			u_long mode = 1;
+			ioctlsocket(server_socket, FIONBIO, &mode);
+		#else
+			fcntl(server_socket, F_SETFL, O_NONBLOCK);
+		#endif
+
 		// Add the socket to the list of connected sockets
 		connected_sockets.push_back(server_socket);
 	}
