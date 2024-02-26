@@ -360,6 +360,9 @@ void Master::processor()
 			socket_message msg = message_queue.front();
 			message_queue.pop();
 
+			// If message is empty due to fragmentation, skip
+			if (msg.second.empty()) { continue; }
+
 			// Determine the type of message
 			if (msg.second[1] == ':')
 			{
@@ -457,14 +460,22 @@ void Master::processor()
 			{
 				std::cout << "SLAVE Received: " << msg.second.length() << " bytes" << std::endl;
 
-				if (msg.second[1] == 'O') {
+				// Since TCP tends to fragment, the last DONE message might be fragmented
+				// We check the last 4 characters of the message to see if it is DONE
+				if (msg.second.substr(msg.second.length() - 4, 4) == "DONE")
+				{
+					machines_done += 1;
+					std::cout << "Finished Slave" << std::endl;
+
+					// Split the packets if machines_done == n_machines
+					if (machines_done == n_machines) { split_packets(); }
+				} else if (msg.second[1] == 'O') {
 					machines_done += 1; 
 					std::cout << "Finished Slave" << std::endl; 
 
 					// Split the packets if machines_done == n_machines
 					if (machines_done == n_machines) { split_packets(); }
-				} else
-				{
+				} else {
 					std::string message = msg.second;
 					// No need to parse primes, just store them as a string
 					// because we will send them back to the clien
