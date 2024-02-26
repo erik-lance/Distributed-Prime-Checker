@@ -64,23 +64,14 @@ static inline void packetSplitter(std::string &primesHex, std::queue<std::string
 
 	const int LARGEST_SIZE = MAX_BUFFER - 1;
 	// Get list of primes until MAX_BUFFER - 1
-	// If last character is not a space, go back until a space.
 	// If MAX_BUFFER - 1 is greater than primesHex length, then
 	// add the rest of the primes to the message.
 	while (primesHex.length() > LARGEST_SIZE) {
 		// If last character is not a space, go back until a space
-		if (primesHex[LARGEST_SIZE] != ' ') {
-			int i = LARGEST_SIZE;
-			while (primesHex[i] != ' ') { i--; }
-			// Message must be from 0 to SPACE so that space is included
-			message = primesHex.substr(0, i + 1);
-			primesHex = primesHex.substr(i + 2); // Remove from primesHex
-		}
-		else {
-			// Message must be from 0 to SPACE so that space is included
-			message = primesHex.substr(0, LARGEST_SIZE + 1);
-			primesHex = primesHex.substr(LARGEST_SIZE + 2); // Remove from primesHex
-		}
+		message = primesHex.substr(0, LARGEST_SIZE);
+
+		// Erase the message from the primesHex
+		primesHex.erase(0, LARGEST_SIZE);
 
 		// Add to queue
 		sender_queue.push(message);
