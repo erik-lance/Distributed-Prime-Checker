@@ -48,7 +48,7 @@ const std::string client_address = "192.168.1.5:6378";
 
 // Slave Addresses
 const std::vector<std::string> slave_addresses = {
-
+	"192.168.1.4:5000"
 };
 
 static inline void packetSplitter(std::string &primesHex, std::queue<std::string> &sender_queue) {
@@ -72,12 +72,14 @@ static inline void packetSplitter(std::string &primesHex, std::queue<std::string
 		if (primesHex[LARGEST_SIZE] != ' ') {
 			int i = LARGEST_SIZE;
 			while (primesHex[i] != ' ') { i--; }
-			message = primesHex.substr(0, i);
-			primesHex.erase(0, i); // Erase the token until the delimiter (including the delimiter)
+			// Message must be from 0 to SPACE so that space is included
+			message = primesHex.substr(0, i + 1);
+			primesHex = primesHex.substr(i + 2); // Remove from primesHex
 		}
 		else {
-			message = primesHex.substr(0, LARGEST_SIZE);
-			primesHex.erase(0, LARGEST_SIZE); // Erase the token until the delimiter (including the delimiter)
+			// Message must be from 0 to SPACE so that space is included
+			message = primesHex.substr(0, LARGEST_SIZE + 1);
+			primesHex = primesHex.substr(LARGEST_SIZE + 2); // Remove from primesHex
 		}
 
 		// Add to queue
