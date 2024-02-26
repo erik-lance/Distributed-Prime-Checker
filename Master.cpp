@@ -376,20 +376,19 @@ void Master::processor()
 			{
 				std::cout << "SLAVE Received" << std::endl;
 
-				// Add the message to the slave response queue
-				// Parse directly into array of integers
-				// Slave sends: ":1 2 3 5 7 11"
-				std::string delimiter = ":";
-				std::string token = msg.substr(0, msg.find(delimiter)); // Get the task id
-				std::string str_primes = msg.substr(msg.find(delimiter) + 1, msg.length());
-
-				// No need to parse primes, just store them as a string
-				// because we will send them back to the client
-
-				// Check if the message is "DONE"
-				if (str_primes == "DONE") { machines_done += 1; }
+				if (msg == "DONE") { machines_done += 1; continue; }
 				else
 				{
+					// No need to parse primes, just store them as a string
+					// because we will send them back to the clien
+				
+					// Add the message to the slave response queue
+					// Parse directly into array of integers
+					// Slave sends: ":1 2 3 5 7 11"
+					std::string delimiter = ":";
+					std::string token = msg.substr(0, msg.find(delimiter)); // Get the task id
+					std::string str_primes = msg.substr(msg.find(delimiter) + 1, msg.length());
+
 					// Append to primesHex
 					primesHex += str_primes;
 				}
