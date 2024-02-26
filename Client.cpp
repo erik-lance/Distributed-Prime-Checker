@@ -25,7 +25,7 @@ Client::~Client()
 void Client::init()
 {
 	// Create a socket
-	m_socket = socket(AF_INET, SOCK_DGRAM, 0);
+	m_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (m_socket < 0)
 	{
 		std::cerr << "Error creating socket" << std::endl;
@@ -78,32 +78,80 @@ void Client::init()
 		exit(1);
 	}
 
-	// Start the listener thread
-	this->isRunning = true;
-	this->listener = std::thread(&Client::listen, this);
-}
-
-void Client::listen()
-{
+	// Prepare master socket
 	// Master address
 	std::string master_host = master_address.substr(0, master_address.find(":"));
 	int master_port = atoi(master_address.substr(master_address.find(":") + 1).c_str());
 
 	// Set up the master server address
-	struct sockaddr_in master_server;
 	memset((char*)&master_server, 0, sizeof(master_server));
 	master_server.sin_family = AF_INET;
 	master_server.sin_port = htons(master_port);
 	InetPtonA(AF_INET, master_host.c_str(), &master_server.sin_addr); // Convert the host address to a usable format
 
+	// Create a socket
+	if ((master_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	{
+		std::cerr << "Error creating socket" << std::endl;
+		exit(1);
+	}
+
+	// Start listening for incoming connections
+	if (listen(m_socket, 1) < 0)
+	{
+		// Print full error details
+		char error[1024];
+		strerror_s(error, sizeof(error), errno);
+		std::cerr << "Error listening: " << error << std::endl;
+		exit(1);
+	}
+
+	// Start the listener thread
+	this->isRunning = true;
+	this->listener = std::thread(&Client::receive, this);
+}
+
+void Client::receive()
+{
 	// Buffer for the message
 	std::vector<char> buffer(MAX_BUFFER);
-	int len = sizeof(master_server);
 
 	while (isRunning)
 	{
+		// Accept a connection
+		SOCKET accept_socket = accept(m_socket, (struct sockaddr*)&m_server, (socklen_t*)&m_server);
+		if (accept_socket < 0)
+		{
+			// Error handling
+			#ifdef _WIN32
+				int error_code = WSAGetLastError();
+				if (error_code != WSAEWOULDBLOCK) {
+					char error[1024];
+					strerror_s(error, sizeof(error), error_code);
+					std::cerr << "[" << error_code << "] Error accepting connection: " << error << std::endl;
+					exit(1);
+				}
+				else {
+					continue;
+				}
+			#else
+			if (errno != EWOULDBLOCK && errno != EAGAIN) {
+					char error[1024];
+					strerror_r(errno, error, sizeof(error));
+					std::cerr << "Error accepting connection: " << error << std::endl;
+					exit(1);
+				}
+			else {
+					continue;
+				}
+			#endif
+		}
+
+		// If connection is not up, continue
+		if (accept_socket == INVALID_SOCKET) { continue; }
+
 		// Receive message
-		int n = recvfrom(this->m_socket, buffer.data(), MAX_BUFFER, 0, (struct sockaddr*)&master_server, (socklen_t*)&len);
+		int n = recv(accept_socket, buffer.data(), buffer.size(), 0);
 
 		if (n < 0)
 		{
@@ -113,7 +161,7 @@ void Client::listen()
 				if (error_code != WSAEWOULDBLOCK) {
 					char error[1024];
 					strerror_s(error, sizeof(error), error_code);
-					std::cerr << "Error receiving message: " << error << std::endl;
+					std::cerr << "[" << error_code << "] Error receiving message: " << error << std::endl;
 					exit(1);
 				}
 				else {
@@ -162,17 +210,6 @@ void Client::run()
 {
 	bool running = true;
 
-	// Master address
-	std::string master_host = master_address.substr(0, master_address.find(":"));
-	int master_port = atoi(master_address.substr(master_address.find(":") + 1).c_str());
-
-	// Set up the master server address
-	struct sockaddr_in master_server;
-	memset((char*)&master_server, 0, sizeof(master_server));
-	master_server.sin_family = AF_INET;
-	master_server.sin_port = htons(master_port);
-	InetPtonA(AF_INET, master_host.c_str(), &master_server.sin_addr); // Convert the host address to a usable format
-
 	while (running)
 	{
 		int start, end;
@@ -185,8 +222,20 @@ void Client::run()
 		// Format message to ("C:NUM1,NUM2")
 		std::string message = "C:" + std::to_string(start) + "," + std::to_string(end);
 
+		// Connect to the master server
+		if (connect(master_socket, (struct sockaddr*)&master_server, sizeof(master_server)) < 0)
+		{
+			// Print full error details
+			char error[1024];
+			strerror_s(error, sizeof(error), errno);
+			std::cerr << "Error connecting to master server: " << error << std::endl;
+			exit(1);
+		}
+
+		std::cout << "Connected to master server" << std::endl;
+
 		// Sends the range to the master server
-		int sent = sendto(m_socket, message.c_str(), message.size(), 0, (struct sockaddr*)&master_server, sizeof(master_server));
+		int sent = send(master_socket, message.c_str(), message.size(), 0);
 		if (sent < 0)
 		{
 			// Print full error details

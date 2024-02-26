@@ -32,7 +32,7 @@ Master::~Master()
 void Master::init()
 {
 	// Create a socket
-	m_socket = socket(AF_INET, SOCK_DGRAM, 0);
+	m_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (m_socket < 0)
 	{
 		std::cerr << "Error creating socket" << std::endl;
@@ -84,6 +84,16 @@ void Master::init()
 		std::cerr << "Error binding socket: " << error << std::endl;
 		exit(1);
 	}
+
+	// Set the socket to listen for incoming connections
+	if (listen(m_socket, 5) != 0)
+	{
+		// Print full error details
+		char error[1024];
+		strerror_s(error, sizeof(error), errno);
+		std::cerr << "Error listening on socket: " << error << std::endl;
+		exit(1);
+	}
 }
 
 void Master::loop()
@@ -131,16 +141,16 @@ void Master::client_send()
 	while (running)
 	{
 		// Check if there are any messages in the queue
-		if (!sender_queue.empty())
+		if (!client_sender_queue.empty())
 		{
 			// Get the message from the queue
-			std::string task = sender_queue.front();
-			sender_queue.pop();
+			std::string task = client_sender_queue.front();
+			client_sender_queue.pop();
 
 			std::cout << "Sending to client: " << task.length() << " bytes" << std::endl;
 
 			// Send the message
-			int sent = sendto(m_socket, task.c_str(), task.length(), 0, (struct sockaddr*)&server, sizeof(server));
+			int sent = send(client_socket, task.c_str(), task.length(), 0);
 
 			if (sent < 0)
 			{
@@ -179,26 +189,18 @@ void Master::slave_send()
 		if (!slave_sender_queue.empty())
 		{
 			// Get the message from the queue
-			request_slave task = slave_sender_queue.front();
+			socket_message task = slave_sender_queue.front();
 			slave_sender_queue.pop();
 
 			std::cout << "Sending to slave" << std::endl;
-			std::cout << "Slave Addr: " << task.first << std::endl;
-			std::cout << "Range: " << task.second.first << " - " << task.second.second << std::endl;
+			std::cout << "Slave Socket: " << task.first << std::endl;
+			std::cout << "Range: " << task.second << std::endl;
 
 			// Packet Details
-			std::string host = task.first.substr(0, task.first.find(":"));
-			int port = atoi(task.first.substr(task.first.find(":") + 1).c_str());
-			std::string message = std::to_string(task.second.first) + "," + std::to_string(task.second.second);
+			std::string message = task.second;
 
-			// Address
-			struct sockaddr_in server;
-			server.sin_family = AF_INET;
-			server.sin_port = htons(port);
-			InetPtonA(AF_INET, host.c_str(), &server.sin_addr); // Convert the host address to a usable format
-
-			// Send the message
-			int sent = sendto(m_socket, message.c_str(), message.length(), 0, (struct sockaddr*)&server, sizeof(server));
+			// Send the message to slave
+			int sent = send(task.first, message.c_str(), message.length(), 0);
 
 			if (sent < 0)
 			{
@@ -224,19 +226,50 @@ void Master::receive()
 	std::vector<char> buffer(MAX_BUFFER);
 
 	// Address
-	struct sockaddr_in client;
-	client.sin_family = AF_INET;
-	client.sin_addr.s_addr = htonl(INADDR_ANY); // Address (Can be any address)
-	client.sin_port = htons(6378); // Port
+	struct sockaddr_in server;
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = htonl(INADDR_ANY); // Address (Can be any address)
+	server.sin_port = htons(6378); // Port
 
-	int client_len = sizeof(client);
+	int server_len = sizeof(server);
 
 	// Split work for slaves and master
 	int n_machines = slave_addresses.size() + 1; // Number of machines (master is the +1)
 
 	while (running)
 	{
-		int bytes_received = recvfrom(m_socket, buffer.data(), MAX_BUFFER, 0, (struct sockaddr*)&client, (socklen_t*)&client_len);
+		// Accept a connection
+		SOCKET server_socket = accept(m_socket, NULL, NULL);
+		
+
+		if (server_socket < 0)
+		{
+			// Error handling
+			#ifdef _WIN32
+				int error_code = WSAGetLastError();
+				if (error_code != WSAEWOULDBLOCK) {
+					char error[1024];
+					strerror_s(error, sizeof(error), error_code);
+					std::cerr << "Error accepting connection: " << error << std::endl;
+					exit(1);
+				}
+				else {
+					continue;
+				}
+			#else
+			if (errno != EWOULDBLOCK && errno != EAGAIN) {
+					char error[1024];
+					strerror_r(errno, error, sizeof(error));
+					std::cerr << "Error accepting connection: " << error << std::endl;
+					exit(1);
+				}
+			#endif
+		}
+
+		// If connection is not up, continue
+		if (server_socket == INVALID_SOCKET) { continue; }
+
+		int bytes_received = recv(server_socket, buffer.data(), buffer.size(), 0);
 
 		if (bytes_received < 0)
 		{
@@ -246,7 +279,7 @@ void Master::receive()
 				if (error_code != WSAEWOULDBLOCK) {
 					char error[1024];
 					strerror_s(error, sizeof(error), error_code);
-					std::cerr << "Error receiving message: " << error << std::endl;
+					std::cerr << "[" << error_code << "] Error receiving message: " << error << std::endl;
 					exit(1);
 				}
 				else {
@@ -269,7 +302,8 @@ void Master::receive()
 		std::string message = std::string(buffer.data(), bytes_received);
 		std::cout << "Received message" << std::endl;
 
-		message_queue.push(message);
+		socket_message msg = std::make_pair(server_socket, message);
+		message_queue.push(msg);
 
 		// Clear the buffer
 		buffer.clear();
@@ -286,23 +320,26 @@ void Master::processor()
 		if (!message_queue.empty())
 		{
 			// Get the message from the queue
-			std::string msg = message_queue.front();
+			socket_message msg = message_queue.front();
 			message_queue.pop();
 
 			// Process the message
 			std::cout << "Processing message" << std::endl;
 
 			// Determine the type of message
-			if (msg[1] == ':')
+			if (msg.second[1] == ':')
 			{
-				std::cout << "\n--------------- CLIENT Received: " << msg << " ---------------" << std::endl;
+				std::cout << "\n--------------- CLIENT Received: " << msg.second << " ---------------" << std::endl;
+				client_socket = msg.first;
+
+				std::string message = msg.second;
 
 				// Parse client messsage to be range<int, int>
 				// Client sends: "C:1,2"
 				// Parse to: range<int, int>
 				std::string delimiter = ":";
-				std::string token = msg.substr(0, msg.find(delimiter));
-				std::string str_range = msg.substr(msg.find(delimiter) + 1, msg.length());
+				std::string token = message.substr(0, message.find(delimiter));
+				std::string str_range = message.substr(message.find(delimiter) + 1, message.length());
 
 				// Parse the range
 				int range_start = std::stoi(str_range.substr(0, str_range.find(",")));
@@ -320,13 +357,13 @@ void Master::processor()
 				for (int i = 0; i < n_machines - 1; i++)
 				{
 					// Create the range
-					range new_range = std::make_pair(start, end);
+					std::string range_str = std::to_string(start) + "," + std::to_string(end);
 
 					// Address of slave
 					std::string slave_addr = slave_addresses[i];
 
 					// Create the message
-					request_slave message = std::make_pair(slave_addr, new_range);
+					socket_message message = std::make_pair(msg.first, range_str);
 
 					// Add the message to the queue
 					slave_sender_queue.push(message);
@@ -374,9 +411,9 @@ void Master::processor()
 			}
 			else
 			{
-				std::cout << "SLAVE Received: " << msg.length() << " bytes" << std::endl;
+				std::cout << "SLAVE Received: " << msg.second.length() << " bytes" << std::endl;
 
-				if (msg[1] == 'O') {
+				if (msg.second[1] == 'O') {
 					machines_done += 1; 
 					std::cout << "Finished Slave" << std::endl; 
 
@@ -384,6 +421,7 @@ void Master::processor()
 					if (machines_done == n_machines) { split_packets(); }
 				} else
 				{
+					std::string message = msg.second;
 					// No need to parse primes, just store them as a string
 					// because we will send them back to the clien
 				
@@ -391,8 +429,8 @@ void Master::processor()
 					// Parse directly into array of integers
 					// Slave sends: ":1 2 3 5 7 11"
 					std::string delimiter = ":";
-					std::string token = msg.substr(0, msg.find(delimiter)); // Get the task id
-					std::string str_primes = msg.substr(msg.find(delimiter) + 1, msg.length());
+					std::string token = message.substr(0, message.find(delimiter)); // Get the task id
+					std::string str_primes = message.substr(message.find(delimiter) + 1, message.length());
 
 					// Append to primesHex
 					std::lock_guard<std::mutex> lock(mtx);
@@ -405,7 +443,7 @@ void Master::processor()
 
 void Master::split_packets()
 {
-	packetSplitter(primesHex, sender_queue);
+	packetSplitter(primesHex, client_sender_queue);
 
 	// Reset
 	machines_done = 0;

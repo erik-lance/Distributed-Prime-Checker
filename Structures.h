@@ -3,6 +3,18 @@
 #include <string>
 #include <queue>
 
+#ifdef _WIN32
+	#include <WinSock2.h>
+	#include <WS2tcpip.h>
+	#pragma comment(lib, "ws2_32.lib")
+#else
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <unistd.h>
+	#include <fcntl.h>
+#endif
+
 constexpr auto MAX_BUFFER = 60000;
 constexpr auto MAX_SPLITS = 8192;
 constexpr auto num_threads = 4;
@@ -24,6 +36,9 @@ typedef std::pair<std::string, range> request_slave;
 
 // Slave -> Master (Response: <task id, result>)
 typedef std::pair<int, std::string> response_slave;
+
+// Socket and message
+typedef std::pair <SOCKET, std::string > socket_message;
 
 // Master Address
 const std::string master_address = "192.168.1.5:6379";

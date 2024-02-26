@@ -32,7 +32,7 @@ Slave::~Slave()
 void Slave::init()
 {
 	// Prepare socket
-	this->m_socket = socket(AF_INET, SOCK_DGRAM, 0);
+	this->m_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (this->m_socket < 0)
 	{
 		std::cerr << "Error creating socket" << std::endl;
@@ -111,7 +111,7 @@ void Slave::processor()
 			std::string message = messages.front();
 			messages.pop();
 
-			int sent = sendto(this->m_socket, message.c_str(), message.length(), 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
+			int sent = send(this->m_socket, message.c_str(), message.length(), 0);
 
 			if (sent < 0)
 			{
@@ -156,7 +156,7 @@ void Slave::listen()
 		memset(buffer, 0, 1024);
 
 		// Receive message
-		int n = recvfrom(this->m_socket, buffer, 1024, 0, (struct sockaddr*)&server_addr, (socklen_t*)&len);
+		int n = recv(this->m_socket, buffer, sizeof(buffer), 0);
 
 		if (n < 0)
 		{
