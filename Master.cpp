@@ -258,14 +258,6 @@ void Master::receive()
 	// Create dynamic buffer of size MAX_BUFFER
 	std::vector<char> buffer(MAX_BUFFER);
 
-	// Address
-	struct sockaddr_in server;
-	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = htonl(INADDR_ANY); // Address (Can be any address)
-	server.sin_port = htons(port); // Port number
-
-	int server_len = sizeof(server);
-
 	// Split work for slaves and master
 	int n_machines = slave_addresses.size() + 1; // Number of machines (master is the +1)
 
