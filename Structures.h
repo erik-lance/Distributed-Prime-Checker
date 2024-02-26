@@ -52,30 +52,15 @@ const std::vector<std::string> slave_addresses = {
 };
 
 static inline void packetSplitter(std::string &primesHex, std::queue<std::string> &sender_queue) {
-	// Once done calculating, split and add to queue
-	// until reached end of message. Splits by MAX_SPLITS
-	// at a time.
-	std::string delimiter = " ";
-	size_t pos = 0;
-	std::string token;
-
-	// Message to send that can dynamically grow to MAX_BUFFER size
 	std::string message = "";
 
 	const int LARGEST_SIZE = MAX_BUFFER - 1;
-	// Get list of primes until MAX_BUFFER - 1
-	// If MAX_BUFFER - 1 is greater than primesHex length, then
-	// add the rest of the primes to the message.
-	while (primesHex.length() > LARGEST_SIZE) {
-		// If last character is not a space, go back until a space
+
+	// Split the primes into packets of size MAX_BUFFER
+	while (primesHex.size() > LARGEST_SIZE) {
 		message = primesHex.substr(0, LARGEST_SIZE);
-
-		// Erase the message from the primesHex
-		primesHex.erase(0, LARGEST_SIZE);
-
-		// Add to queue
+		primesHex = primesHex.substr(LARGEST_SIZE);
 		sender_queue.push(message);
-		message = "";
 	}
 
 	// Add the rest of the primes to the message
