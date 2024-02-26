@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-constexpr auto MAX_BUFFER = 32768;
+constexpr auto MAX_BUFFER = 60000;
 constexpr auto MAX_SPLITS = 8192;
 constexpr auto num_threads = 4;
 
