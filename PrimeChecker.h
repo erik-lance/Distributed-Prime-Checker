@@ -115,3 +115,17 @@ static inline std::vector<int> convertHexPrimes(std::string primes) {
 
 	return converted;
 }
+
+/**
+ * Manually count the number of primes in a string of hex numbers.
+ */
+static inline int countHexPrimes(std::string primes) {
+	// Go through primes and count the number of spaces
+	int count = 0;
+	for (int i = 0; i < primes.length(); i++) {
+		if (primes[i] == ' ')
+			count++;
+	}
+
+	return count;
+}
