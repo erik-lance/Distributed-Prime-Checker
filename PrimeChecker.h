@@ -57,12 +57,17 @@ static inline void primeChecker(range r, std::vector<int>& primes, std::mutex& m
  * @param mtx The mutex to lock the string.
  */
 static inline void primeCheckerHex(range r, std::string& primes, std::mutex& mtx) {
-	for (int i = r.first; i <= r.second; i++) {
+	int start = r.first;
+	int end = r.second;
+	for (int i = start; i <= end; i++) {
 		if (isPrime(i)) {
 			std::stringstream stream;
 			stream << std::hex << i;
-			std::lock_guard<std::mutex> lock(mtx);
-			primes += stream.str() + " ";
+			std::string hex = stream.str();
+
+			mtx.lock();
+			primes += hex + " ";
+			mtx.unlock();
 		}
 	}
 }
