@@ -110,7 +110,7 @@ void Slave::processor()
 			}
 
 			// Log the message
-			std::cout << "Slave " << slave_id << " sent message" << std::endl;
+			std::cout << "Slave " << slave_id << " sent message " << message.length() << " bytes" << std::endl;
 
 			if (message == "DONE")
 			{

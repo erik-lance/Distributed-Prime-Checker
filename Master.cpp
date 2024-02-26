@@ -349,9 +349,6 @@ void Master::processor()
 			socket_message msg = message_queue.front();
 			message_queue.pop();
 
-			// Process the message
-			std::cout << "Processing message" << std::endl;
-
 			// Determine the type of message
 			if (msg.second[1] == ':')
 			{
