@@ -379,17 +379,27 @@ void Master::processor()
 				int start = num_range.first;
 				int end = start + range_size;
 
+				// Find sockets that are not client_socket
+				std::vector<SOCKET> slave_sockets;
+				for (int i = 0; i < connected_sockets.size(); i++)
+				{
+					if (connected_sockets[i] != client_socket)
+					{
+						slave_sockets.push_back(connected_sockets[i]);
+					}
+				}
+
 				// Send the message to the slaves
 				for (int i = 0; i < n_machines - 1; i++)
 				{
 					// Create the range
 					std::string range_str = std::to_string(start) + "," + std::to_string(end);
 
-					// Address of slave
-					std::string slave_addr = slave_addresses[i];
+					// SOCKET of slave
+					SOCKET slave_socket = slave_sockets[i];
 
 					// Create the message
-					socket_message message = std::make_pair(msg.first, range_str);
+					socket_message message = std::make_pair(slave_socket, range_str);
 
 					// Add the message to the queue
 					slave_sender_queue.push(message);
