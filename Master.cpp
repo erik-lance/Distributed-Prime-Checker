@@ -472,13 +472,10 @@ void Master::processor()
 					// Add the message to the slave response queue
 					// Parse directly into array of integers
 					// Slave sends: ":1 2 3 5 7 11"
-					std::string delimiter = ":";
-					std::string token = message.substr(0, message.find(delimiter)); // Get the task id
-					std::string str_primes = message.substr(message.find(delimiter) + 1, message.length());
 
 					// Append to primesHex
 					std::lock_guard<std::mutex> lock(mtx);
-					primesHex += str_primes;
+					primesHex += message;
 				}
 			}
 		}
