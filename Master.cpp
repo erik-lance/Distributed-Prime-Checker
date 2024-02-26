@@ -451,10 +451,17 @@ void Master::processor()
 
 				// Since TCP tends to fragment, the last DONE message might be fragmented
 				// We check the last 4 characters of the message to see if it is DONE
-				if (msg.second.substr(msg.second.length() - 4, 4) == "DONE")
+				if (msg.second.length() > 4 && msg.second.substr(msg.second.length() - 4, 4) == "DONE")
 				{
 					machines_done += 1;
-					std::cout << "Finished Slave" << std::endl;
+					std::cout << "[Fragmented] Finished Slave" << std::endl;
+
+					// Remove last 4 characters from the message
+					msg.second = msg.second.substr(0, msg.second.length() - 4);
+					
+					mtx.lock();
+					primesHex += msg.second;
+					mtx.unlock();
 
 					// Split the packets if machines_done == n_machines
 					if (machines_done == n_machines) { split_packets(); }
