@@ -42,21 +42,12 @@ void Slave::init()
 	// Set up the address
 	this->m_server.sin_family = AF_INET;
 
-	// Get address of slave
-	std::string addr = slave_addresses[slave_id];
-	int port = atoi(addr.substr(addr.find(":") + 1).c_str());
-	std::string host = addr.substr(0, addr.find(":"));
+	// Get address of master
+	int port = atoi(master_address.substr(master_address.find(":") + 1).c_str());
+	std::string host = master_address.substr(0, master_address.find(":"));
 
 	this->m_server.sin_port = htons(port);
 	InetPtonA(AF_INET, host.c_str(), &this->m_server.sin_addr); // Convert the host address to a usable format
-
-	// Set the socket to non-blocking
-	#ifdef _WIN32
-		u_long mode = 1;
-		ioctlsocket(this->m_socket, FIONBIO, &mode);
-	#else
-		fcntl(this->m_socket, F_SETFL, O_NONBLOCK);
-	#endif
 
 	// Set the socket to reuse the address
 	int opt = 1;
@@ -80,12 +71,17 @@ void Slave::init()
 		exit(1);
 	}
 
-	// Bind the socket
-	if (bind(this->m_socket, (struct sockaddr*)&this->m_server, sizeof(this->m_server)) < 0)
+	// Connect to the master
+	if (connect(this->m_socket, (struct sockaddr*)&this->m_server, sizeof(this->m_server)) < 0)
 	{
-		std::cerr << "Error binding socket" << std::endl;
+		// Print full error details
+		char error[1024];
+		strerror_s(error, sizeof(error), errno);
+		std::cerr << "Error connecting to master: " << error << std::endl;
 		exit(1);
 	}
+
+	std::cout << "Connected to master!: " << master_address << std::endl;
 }
 
 /**
@@ -93,15 +89,6 @@ void Slave::init()
  */
 void Slave::processor()
 {
-	int port = atoi(master_address.substr(master_address.find(":") + 1).c_str());
-	std::string host = master_address.substr(0, master_address.find(":"));
-
-	// Socket Address
-	struct sockaddr_in server_addr;
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(port); // Port number of master
-	InetPtonA(AF_INET, host.c_str(), &server_addr.sin_addr); // Convert the host address to a usable format
-
 	while (isRunning)
 	{
 		// If there are messages in the queue
@@ -152,11 +139,10 @@ void Slave::listen()
 	while (isRunning)
 	{
 		// Buffer for message
-		char buffer[1024];
-		memset(buffer, 0, 1024);
+		std::vector<char> buffer(MAX_BUFFER);
 
 		// Receive message
-		int n = recv(this->m_socket, buffer, sizeof(buffer), 0);
+		int n = recv(this->m_socket, buffer.data(), MAX_BUFFER, 0);
 
 		if (n < 0)
 		{
@@ -183,7 +169,7 @@ void Slave::listen()
 		}
 
 		// Add message to queue
-		std::string message = std::string(buffer);
+		std::string message = std::string(buffer.data(), n);
 
 		std::cout << "Slave " << slave_id << " received message: " << message << std::endl;
 
@@ -225,6 +211,6 @@ void Slave::listen()
 
 		// Reset everything
 		primesHex = "";
-		memset(buffer, 0, sizeof(buffer));
+		buffer.clear();
 	}
 }
