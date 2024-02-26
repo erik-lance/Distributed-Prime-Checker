@@ -325,7 +325,6 @@ void Master::receive()
 			// Slave: "1 2 3 5 7 11"
 			// Add message to queue
 			std::string message = std::string(buffer.data(), bytes_received);
-			std::cout << "Received message" << std::endl;
 
 			// IF message is CLOSE, close the socket
 			if (message == "CLOSE")
