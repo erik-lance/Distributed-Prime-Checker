@@ -133,15 +133,8 @@ void Master::init()
 
 		// Add the socket to the list of connected sockets
 		connected_sockets.push_back(server_socket);
+		socket_done.push_back(false);
 	}
-
-	// Set to non-blocking
-	#ifdef _WIN32
-		u_long mode = 1;
-		ioctlsocket(m_socket, FIONBIO, &mode);
-	#else
-		fcntl(m_socket, F_SETFL, O_NONBLOCK);
-	#endif
 
 	std::cout << "All machines connected. Starting receivers and senders." << std::endl;
 	start();
@@ -188,8 +181,6 @@ void Master::client_send()
 			std::string task = client_sender_queue.front();
 			client_sender_queue.pop();
 
-			std::cout << "Sending to client: " << task.length() << " bytes" << std::endl;
-
 			// Send the message
 			int sent = send(client_socket, task.c_str(), task.length(), 0);
 
@@ -206,12 +197,11 @@ void Master::client_send()
 				#endif	
 			}
 			else {
-				std::cout << "Sent message to client" << std::endl;
 				batches++;
 
 				// Sent details
 
-				std::cout << "Sent: " << sent << " bytes\n" << std::endl;
+				std::cout << "Sent: " << sent << " bytes to client\n" << std::endl;
 				
 				// If message was DONE, print number of batches done
 				if (task == "DONE") { 
@@ -278,6 +268,7 @@ void Master::receive()
 		// For each socket connected under connected_sockets, receive the message
 		for (int i = 0; i < connected_sockets.size(); i++) {
 			SOCKET server_socket = connected_sockets[i];
+			if (socket_done[i]) { continue; }
 
 			// Clear the buffer
 			buffer.clear();
@@ -314,6 +305,9 @@ void Master::receive()
 			// Slave: "1 2 3 5 7 11"
 			// Add message to queue
 			std::string message = std::string(buffer.data(), bytes_received);
+
+			// IF message is DONE, set socket_done to true
+			if (message == "DONE") { socket_done[i] = true; }
 
 			// IF message is CLOSE, close the socket
 			if (message == "CLOSE")
@@ -493,12 +487,16 @@ void Master::processor()
 void Master::split_packets()
 {
 	// Count primes before splitting
-	int n_primes = countHexPrimes(primesHex);
-	std::cout << "Number of primes: " << n_primes << std::endl;
+	//int n_primes = countHexPrimes(primesHex);
+	//std::cout << "Number of primes: " << n_primes << std::endl;
 
 	packetSplitter(primesHex, client_sender_queue);
 
 	// Reset
 	machines_done = 0;
 	primesHex = "";
+
+	for (int i = 0; i < connected_sockets.size(); i++) {
+		socket_done[i] = false;
+	}
 }
