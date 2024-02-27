@@ -45,6 +45,7 @@ private:
 
 	// Connections
 	std::vector<SOCKET> connected_sockets; // Connected Sockets
+	std::vector<bool> socket_done; // Socket Done
 
 	SOCKET client_socket; // Client Socket
 
