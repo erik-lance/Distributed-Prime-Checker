@@ -43,14 +43,20 @@ private:
 	SOCKET m_socket;
 	struct sockaddr_in m_server; // Server Address
 
+	// Connections
+	std::vector<SOCKET> connected_sockets; // Connected Sockets
+	std::vector<bool> socket_done; // Socket Done
+
+	SOCKET client_socket; // Client Socket
+
 	// Queue for messages to process
-	std::queue<std::string> message_queue;
+	std::queue<socket_message> message_queue;
 
 	// Queue for messages to the client
-	std::queue<std::string> sender_queue;
+	std::queue<std::string> client_sender_queue;
 
 	// Queue for messages to the slave servers
-	std::queue<request_slave> slave_sender_queue;
+	std::queue<socket_message> slave_sender_queue;
 
 	std::string primesHex;
 

@@ -44,12 +44,14 @@ private:
 	SOCKET m_socket;
 	struct sockaddr_in m_server;
 
+	SOCKET master_socket;
+	struct sockaddr_in master_server;
+
 	std::queue<std::string> messages;
 	std::thread listener;
 	bool isRunning;
 
 	void init();
-	void listen();
 	
 };
 
